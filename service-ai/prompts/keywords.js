@@ -2,14 +2,15 @@ function buildKeywordsPrompt(ticker) {
   return [
     {
       role: 'user',
-      content: `You are a financial analyst. Given the stock ticker "${ticker}", identify the company and generate 4 to 6 keywords that represent the major themes, events, and risk factors that affect this company's stock price.
+      content: `You are a financial analyst. Given the stock ticker "${ticker}", generate 4 to 6 single-word keywords that represent the major themes and risk factors that affect this company's stock price.
 
-These keywords will be used to search a prediction market platform (like Polymarket) for relevant markets. Choose keywords that are:
-- Broad enough to match active prediction markets (e.g., "war" not "Q3 defense contract renewal")
-- Tied to macro events, geopolitical risks, industry trends, or regulatory actions
-- Relevant to what moves this specific stock
+Rules:
+- Each keyword must be exactly ONE word (e.g., "war", "oil", "tariffs", "inflation", "semiconductors")
+- Never use multi-word phrases
+- Keywords will be used to search Polymarket for prediction markets
+- Choose words tied to macro events, geopolitics, industry trends, or regulations that move this stock
 
-Return ONLY a JSON array of keyword strings. No explanation, no numbering, no markdown. Example format:
+Return ONLY a JSON array of single-word strings. No explanation, no markdown.
 ["keyword1", "keyword2", "keyword3", "keyword4"]`
     }
   ];

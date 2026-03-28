@@ -12,14 +12,12 @@ A user holds stock in "${ticker}" and has selected the following prediction mark
 
 ${marketList}
 
-Write a clear, beginner-friendly summary that covers:
+Write a short, beginner-friendly summary (under 100 words, plain text, no markdown or tables) that:
+- Says what "${ticker}" does in one sentence
+- Briefly explains how each market connects to the stock
+- Explains why this bundle hedges risk
 
-1. **What the company does** — explain "${ticker}" in simple terms (1-2 sentences)
-2. **Why each market relates to the stock** — for each prediction market above, explain the cause-and-effect link to "${ticker}". Include directional reasoning where appropriate (e.g., "historically, defense stocks tend to rise during active conflicts").
-3. **Why hedging with these markets is a good idea** — explain what specific risk each market covers, and how betting on these prediction markets can offset potential losses in the stock. Help the user understand why this combination protects them.
-4. **How this bundle works together** — frame these selections as a unified strategy. Explain why these pieces complement each other as a hedge.
-
-Use plain English. If you use a financial term, briefly explain it. Keep the total response under 300 words.`
+Use plain English. No jargon without a brief explanation. Be concise.`
     }
   ];
 }
