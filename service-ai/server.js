@@ -2,6 +2,7 @@ const express = require('express');
 require('dotenv').config();
 
 const keywordsRouter = require('./routes/keywords');
+const bundleSummaryRouter = require('./routes/bundle-summary');
 
 const app = express();
 app.use(express.json());
@@ -13,6 +14,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/keywords', keywordsRouter);
+app.use('/bundle-summary', bundleSummaryRouter);
 
 app.listen(PORT, () => {
   console.log(`service-ai running on port ${PORT}`);
