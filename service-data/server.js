@@ -11,6 +11,7 @@ const {
   parseExcel,
   enrichPositions,
 } = require("./positions");
+const { handler: portfolioMarketsHandler } = require("./routes/portfolio-markets");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -70,6 +71,11 @@ app.get("/markets", async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// ---------------------------------------------------------------------------
+// POST /portfolio-markets
+// ---------------------------------------------------------------------------
+app.post("/portfolio-markets", portfolioMarketsHandler);
 
 // ---------------------------------------------------------------------------
 // GET /quote?ticker=AAPL

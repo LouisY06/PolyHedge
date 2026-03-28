@@ -96,10 +96,10 @@ function scoreMarketRelevance(raw, keyword) {
   const slugHasSubstring = !slugHasSegment && slug.includes(kw);
 
   if (titleHasWord) score += 40;
-  else if (titleHasSubstring) score += 15;
+  else if (titleHasSubstring && kw.length >= 4) score += 15;
 
   if (slugHasSegment) score += 30;
-  else if (slugHasSubstring) score += 10;
+  else if (slugHasSubstring && kw.length >= 4) score += 10;
 
   // No text match at all → irrelevant
   if (score === 0) return 0;
