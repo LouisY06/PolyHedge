@@ -2,7 +2,7 @@ const K2THINK_URL = 'https://api.k2think.ai/v1/chat/completions';
 const K2THINK_MODEL = 'MBZUAI-IFM/K2-Think-v2';
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [1000, 2000, 4000];
-const TIMEOUT_MS = 30000;
+const TIMEOUT_MS = 120000;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

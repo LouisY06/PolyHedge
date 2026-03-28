@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
@@ -12,12 +13,21 @@ const {
   enrichPositions,
 } = require("./positions");
 const { handler: portfolioMarketsHandler } = require("./routes/portfolio-markets");
+const { handler: analyzeHandler } = require("./routes/analyze");
+
+// service-ai routes (mounted directly instead of a separate server)
+const keywordsRouter = require("../service-ai/routes/keywords");
+const bundleSummaryRouter = require("../service-ai/routes/bundle-summary");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve frontend static build
+const FRONTEND_DIST = path.join(__dirname, "..", "frontend", "dist");
+app.use(express.static(FRONTEND_DIST));
 
 // Multer: accept CSV and Excel files up to 5 MB, stored in memory
 const upload = multer({
@@ -76,6 +86,11 @@ app.get("/markets", async (req, res) => {
 // POST /portfolio-markets
 // ---------------------------------------------------------------------------
 app.post("/portfolio-markets", portfolioMarketsHandler);
+
+// ---------------------------------------------------------------------------
+// POST /analyze — full K2Think pipeline
+// ---------------------------------------------------------------------------
+app.post("/analyze", analyzeHandler);
 
 // ---------------------------------------------------------------------------
 // GET /quote?ticker=AAPL
@@ -170,6 +185,24 @@ app.post("/positions/upload", upload.single("file"), async (req, res) => {
       warning: "Could not fetch live prices from Yahoo Finance",
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// service-ai routes
+// ---------------------------------------------------------------------------
+app.use("/keywords", keywordsRouter);
+app.use("/bundle-summary", bundleSummaryRouter);
+
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+// ---------------------------------------------------------------------------
+// Frontend catch-all — serve index.html for client-side routing
+// ---------------------------------------------------------------------------
+app.get("*", (_req, res, next) => {
+  const indexPath = path.join(FRONTEND_DIST, "index.html");
+  res.sendFile(indexPath, (err) => {
+    if (err) next(); // no frontend build yet, fall through
+  });
 });
 
 // Multer error handler

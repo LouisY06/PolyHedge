@@ -85,9 +85,12 @@ function parseRow(row) {
     norm[k.toLowerCase().replace(/[\s_]/g, "")] = v;
   }
 
-  // Ticker: "symbol", "ticker", or Robinhood's "Symbol" header
-  const ticker = (norm["symbol"] || norm["ticker"] || "").toString().trim().toUpperCase();
+  // Ticker: "symbol", "ticker", "instrument" (brokerage CSV format)
+  const ticker = (norm["symbol"] || norm["ticker"] || norm["instrument"] || "").toString().trim().toUpperCase();
   if (!ticker || ticker.length > 10) return null; // skip totals/empty rows
+
+  // Company name: "description", "name", "companyname"
+  const name = (norm["description"] || norm["name"] || norm["companyname"] || "").toString().trim() || null;
 
   // Shares: "shares", "quantity", "qty"
   const sharesRaw = norm["shares"] || norm["quantity"] || norm["qty"] || "0";
@@ -108,7 +111,7 @@ function parseRow(row) {
     if (isNaN(averageCost)) averageCost = null;
   }
 
-  return { ticker, shares, averageCost };
+  return { ticker, name, shares, averageCost };
 }
 
 /**
@@ -138,7 +141,7 @@ function enrichPositions(positions, quoteMap) {
       ticker: pos.ticker,
       shares: pos.shares,
       averageCost: pos.averageCost,
-      name: quote?.name || pos.ticker,
+      name: quote?.name || pos.name || pos.ticker,
       currentPrice,
       marketValue,
       gainLoss,
