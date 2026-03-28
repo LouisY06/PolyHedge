@@ -1,0 +1,19 @@
+{
+  "name": "service-ai",
+  "version": "1.0.0",
+  "description": "K2Think LLM service for keyword generation and bundle summaries",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0"
+  }
+}
