@@ -11,87 +11,84 @@ export default function HedgeExplainerModal({ onClose }: Props) {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="What is hedging"
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50" />
       <div
-        className="relative bg-bg-card border border-border rounded-2xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto shadow-xl"
+        className="relative bg-bg-card border border-border rounded-xl max-w-lg w-full p-5 max-h-[85vh] overflow-y-auto shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer p-1"
+          className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer p-0.5"
           aria-label="Close"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        <h2 className="text-lg font-bold text-text-primary mb-5">
+        <h2 className="text-base font-bold text-text-primary mb-4">
           What is Hedging?
         </h2>
 
-        <div className="space-y-5 text-sm text-text-secondary leading-relaxed">
+        <div className="space-y-4 text-sm text-text-secondary leading-relaxed">
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-xl bg-accent-green-light flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Shield size={16} className="text-accent-green" />
+            <div className="w-8 h-8 rounded-lg bg-green-bg flex items-center justify-center flex-shrink-0">
+              <Shield size={14} className="text-green" />
             </div>
             <div>
-              <h3 className="text-text-primary font-semibold mb-1">
+              <h3 className="text-text-primary font-semibold mb-0.5 text-sm">
                 Protection Against Loss
               </h3>
-              <p>
-                Hedging is like insurance for your investments. You allocate a
-                portion of your capital to positions that gain value when your
-                main investments lose value.
+              <p className="text-xs">
+                Hedging is like insurance for your investments. You allocate capital
+                to positions that gain value when your main investments lose value.
               </p>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-xl bg-accent-blue-light flex items-center justify-center flex-shrink-0 mt-0.5">
-              <ArrowRightLeft size={16} className="text-accent-blue" />
+            <div className="w-8 h-8 rounded-lg bg-blue-bg flex items-center justify-center flex-shrink-0">
+              <ArrowRightLeft size={14} className="text-blue" />
             </div>
             <div>
-              <h3 className="text-text-primary font-semibold mb-1">
+              <h3 className="text-text-primary font-semibold mb-0.5 text-sm">
                 How Prediction Markets Help
               </h3>
-              <p>
-                Prediction markets let you bet on real-world events. By taking
-                positions in markets related to your stocks, you can profit from
-                events that would hurt your portfolio.
+              <p className="text-xs">
+                Prediction markets let you bet on real-world events. Take positions
+                in markets related to your stocks to profit from events that would
+                hurt your portfolio.
               </p>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-xl bg-accent-red-light flex items-center justify-center flex-shrink-0 mt-0.5">
-              <TrendingDown size={16} className="text-accent-red" />
+            <div className="w-8 h-8 rounded-lg bg-red-bg flex items-center justify-center flex-shrink-0">
+              <TrendingDown size={14} className="text-red" />
             </div>
             <div>
-              <h3 className="text-text-primary font-semibold mb-1">
+              <h3 className="text-text-primary font-semibold mb-0.5 text-sm">
                 The Trade-Off
               </h3>
-              <p>
-                More hedging means less risk, but also less potential upside. The
-                hedge dial lets you find the right balance.
+              <p className="text-xs">
+                More hedging = less risk but less upside. The hedge dial lets you
+                find the right balance.
               </p>
             </div>
           </div>
 
-          <div className="bg-bg-primary border border-border rounded-xl p-4">
-            <h3 className="text-text-primary font-semibold mb-2">Example</h3>
-            <p>
-              You own $10,000 of NVIDIA stock and you're worried about AI chip
-              export restrictions. You find a prediction market at 45% chance.
-              If restrictions pass and NVIDIA drops, your prediction market gains
-              offset some of that loss.
+          <div className="bg-bg-page border border-border rounded-lg p-3">
+            <h3 className="text-text-primary font-semibold mb-1 text-sm">Example</h3>
+            <p className="text-xs">
+              You own $10K of NVIDIA. Worried about chip export restrictions?
+              A prediction market at 45% chance lets you profit if restrictions pass
+              and NVIDIA drops — offsetting your loss.
             </p>
           </div>
         </div>
 
         <button
           onClick={onClose}
-          className="w-full mt-5 bg-accent-blue text-white font-semibold py-3 rounded-xl text-sm hover:bg-accent-blue/90 transition-colors cursor-pointer border-none focus:ring-2 focus:ring-accent-blue-light focus:outline-none"
+          className="w-full mt-4 bg-text-primary text-bg-card font-semibold py-2.5 rounded-lg text-sm hover:opacity-90 transition-opacity cursor-pointer border-none"
         >
           Got it
         </button>

@@ -10,22 +10,17 @@ export default function HedgeDial({ value, onChange }: Props) {
 
   const getTooltip = () => {
     if (value === 0) return 'No hedge — fully exposed to market movements.'
-    if (value <= 20)
-      return `Light hedge: ${value}% in prediction markets. Minimal protection, maximum upside.`
-    if (value <= 50)
-      return `Balanced: ${value}% hedged. Moderate protection while keeping most upside.`
-    if (value <= 80)
-      return `Heavy hedge: ${value}% in prediction markets. Strong protection, limited upside.`
-    return `Max hedge: ${value}% in prediction markets. Near-full protection, very limited upside.`
+    if (value <= 20) return `Light hedge: ${value}% in prediction markets.`
+    if (value <= 50) return `Balanced: ${value}% hedged. Moderate protection.`
+    if (value <= 80) return `Heavy hedge: ${value}% hedged. Strong protection.`
+    return `Max hedge: ${value}% in prediction markets.`
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs text-text-primary font-semibold">
-          Hedge Ratio
-        </label>
-        <span className="text-sm font-bold text-accent-blue">{value}%</span>
+        <label className="text-xs text-text-secondary font-medium">Hedge Ratio</label>
+        <span className="text-sm font-bold text-blue">{value}%</span>
       </div>
 
       <input
@@ -36,34 +31,27 @@ export default function HedgeDial({ value, onChange }: Props) {
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full cursor-pointer"
         style={{
-          background: `linear-gradient(to right, #2563EB ${value}%, #E2E8F0 ${value}%)`,
+          background: `linear-gradient(to right, #3B82F6 ${value}%, #E5E7EB ${value}%)`,
         }}
         aria-label="Hedge percentage"
       />
 
-      <div className="flex justify-between text-[10px] text-text-muted font-medium">
-        <span>0% No hedge</span>
-        <span>100% Full hedge</span>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-bg-primary border border-border rounded-xl p-2.5">
-          <p className="text-[10px] text-text-muted font-medium">Stocks</p>
-          <p className="text-base font-bold text-text-primary">{stockPercent}%</p>
+      <div className="grid grid-cols-3 gap-1.5 text-center">
+        <div className="bg-bg-input rounded-md py-2">
+          <p className="text-[10px] text-text-muted">Stocks</p>
+          <p className="text-sm font-bold text-text-primary">{stockPercent}%</p>
         </div>
-        <div className="bg-accent-green-light rounded-xl p-2.5">
-          <p className="text-[10px] text-accent-green font-medium">Loss Reduced</p>
-          <p className="text-base font-bold text-accent-green">-{lossReduction}%</p>
+        <div className="bg-green-bg rounded-md py-2">
+          <p className="text-[10px] text-green">Loss ↓</p>
+          <p className="text-sm font-bold text-green">-{lossReduction}%</p>
         </div>
-        <div className="bg-accent-blue-light rounded-xl p-2.5">
-          <p className="text-[10px] text-accent-blue font-medium">Upside Kept</p>
-          <p className="text-base font-bold text-accent-blue">{upsideRetained}%</p>
+        <div className="bg-blue-bg rounded-md py-2">
+          <p className="text-[10px] text-blue">Upside</p>
+          <p className="text-sm font-bold text-blue">{upsideRetained}%</p>
         </div>
       </div>
 
-      <p className="text-xs text-text-muted leading-relaxed bg-bg-primary border border-border rounded-xl p-3">
-        {getTooltip()}
-      </p>
+      <p className="text-xs text-text-muted leading-relaxed">{getTooltip()}</p>
     </div>
   )
 }

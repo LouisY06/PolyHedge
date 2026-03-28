@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { loginRobinhood } from '../api/client'
-import { Shield } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -30,29 +29,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-primary px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-accent-blue-light flex items-center justify-center mx-auto mb-4">
-            <Shield size={24} className="text-accent-blue" />
-          </div>
-          <h1 className="text-2xl font-bold text-text-primary mb-1 tracking-tight">
+    <div className="min-h-screen flex items-center justify-center bg-bg-page px-4">
+      <div className="w-full max-w-[360px]">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-text-primary tracking-tight">
             PolyHedge
           </h1>
-          <p className="text-text-secondary text-sm">
+          <p className="text-text-secondary text-sm mt-1">
             Hedge your portfolio with prediction markets
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm"
+          className="bg-bg-card border border-border rounded-xl p-5 space-y-4"
         >
           <div>
-            <label
-              htmlFor="email"
-              className="block text-text-primary text-xs font-semibold mb-1.5"
-            >
+            <label htmlFor="email" className="block text-text-secondary text-xs font-medium mb-1">
               Email
             </label>
             <input
@@ -60,16 +53,13 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-bg-primary border border-border rounded-xl px-3 py-2.5 text-text-primary text-sm outline-none focus:border-accent-blue focus:ring-2 focus:ring-accent-blue-light transition-all"
+              className="w-full bg-bg-input border border-border rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus:border-blue transition-colors"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-text-primary text-xs font-semibold mb-1.5"
-            >
+            <label htmlFor="password" className="block text-text-secondary text-xs font-medium mb-1">
               Password
             </label>
             <input
@@ -77,21 +67,17 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-bg-primary border border-border rounded-xl px-3 py-2.5 text-text-primary text-sm outline-none focus:border-accent-blue focus:ring-2 focus:ring-accent-blue-light transition-all"
+              className="w-full bg-bg-input border border-border rounded-lg px-3 py-2.5 text-text-primary text-sm outline-none focus:border-blue transition-colors"
               placeholder="••••••••"
             />
           </div>
 
-          {error && (
-            <p className="text-accent-red text-xs" role="alert">
-              {error}
-            </p>
-          )}
+          {error && <p className="text-red text-xs" role="alert">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-accent-blue text-white font-semibold py-3 rounded-xl text-sm hover:bg-accent-blue/90 transition-colors disabled:opacity-50 cursor-pointer border-none focus:ring-2 focus:ring-accent-blue-light focus:outline-none"
+            className="btn-3d w-full bg-text-primary text-bg-card font-semibold py-2.5 rounded-lg text-sm disabled:opacity-50 cursor-pointer border-none"
           >
             {loading ? 'Connecting...' : 'Connect Robinhood'}
           </button>

@@ -2,36 +2,81 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg-primary: #F8FAFC;
+  --color-bg-page: #F7F7F8;
   --color-bg-card: #FFFFFF;
-  --color-bg-hover: #F1F5F9;
-  --color-border: #E2E8F0;
-  --color-border-light: #F1F5F9;
-  --color-text-primary: #1E293B;
-  --color-text-secondary: #64748B;
-  --color-text-muted: #94A3B8;
-  --color-accent-blue: #2563EB;
-  --color-accent-blue-light: #DBEAFE;
-  --color-accent-green: #16A34A;
-  --color-accent-green-light: #DCFCE7;
-  --color-accent-red: #DC2626;
-  --color-accent-red-light: #FEE2E2;
-  --color-accent-orange: #F97316;
-  --color-accent-purple: #7C3AED;
+  --color-bg-hover: #F0F0F2;
+  --color-bg-input: #F7F7F8;
+  --color-border: #E5E7EB;
+  --color-text-primary: #171717;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-green: #22C55E;
+  --color-green-bg: #F0FDF4;
+  --color-red: #EF4444;
+  --color-red-bg: #FEF2F2;
+  --color-blue: #3B82F6;
+  --color-blue-bg: #EFF6FF;
+  --color-purple: #7C3AED;
 }
 
 body {
   margin: 0;
-  background-color: var(--color-bg-primary);
+  background-color: var(--color-bg-page);
   color: var(--color-text-primary);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* 3D pushable buttons */
+.btn-3d {
+  position: relative;
+  transform: translateY(0);
+  box-shadow: 0 4px 0 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+.btn-3d:hover {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.04);
+}
+.btn-3d:active {
+  transform: translateY(4px);
+  box-shadow: 0 0px 0 0 rgba(0,0,0,0.1), 0 0px 2px rgba(0,0,0,0.02);
+}
+
+.btn-3d-blue {
+  box-shadow: 0 4px 0 0 #2563EB, 0 2px 8px rgba(59,130,246,0.25);
+}
+.btn-3d-blue:hover {
+  box-shadow: 0 2px 0 0 #2563EB, 0 1px 4px rgba(59,130,246,0.15);
+}
+.btn-3d-blue:active {
+  box-shadow: 0 0px 0 0 #2563EB, 0 0px 2px rgba(59,130,246,0.1);
+}
+
+.btn-3d-green {
+  box-shadow: 0 4px 0 0 #16A34A, 0 2px 8px rgba(34,197,94,0.2);
+}
+.btn-3d-green:hover {
+  box-shadow: 0 2px 0 0 #16A34A, 0 1px 4px rgba(34,197,94,0.1);
+}
+.btn-3d-green:active {
+  box-shadow: 0 0px 0 0 #16A34A, 0 0px 2px rgba(34,197,94,0.05);
+}
+
+.btn-3d-red {
+  box-shadow: 0 4px 0 0 #DC2626, 0 2px 8px rgba(239,68,68,0.2);
+}
+.btn-3d-red:hover {
+  box-shadow: 0 2px 0 0 #DC2626, 0 1px 4px rgba(239,68,68,0.1);
+}
+.btn-3d-red:active {
+  box-shadow: 0 0px 0 0 #DC2626, 0 0px 2px rgba(239,68,68,0.05);
 }
 
 input[type="range"] {
@@ -45,11 +90,11 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: #2563EB;
+  background: #3B82F6;
   cursor: pointer;
   border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
