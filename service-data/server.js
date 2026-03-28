@@ -51,11 +51,12 @@ app.get("/markets", async (req, res) => {
   try {
     const markets = await searchMarketsByKeyword(keyword.trim());
 
-    if (markets.length === 0) {
-      return res.status(200).json({ keyword, markets: [], message: "No active markets found" });
-    }
-
-    return res.json({ keyword, markets });
+    return res.json({
+      keyword,
+      count: markets.length,
+      markets,
+      ...(markets.length === 0 && { message: "No active markets found" }),
+    });
   } catch (err) {
     console.error(`[/markets] Failed for keyword="${keyword}":`, err.message);
 
