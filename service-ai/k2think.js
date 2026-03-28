@@ -44,7 +44,14 @@ async function callK2Think(messages) {
         throw new Error('K2Think returned empty response');
       }
 
-      return data.choices[0].message.content;
+      // K2Think is a "thinking" model — it outputs <think>...</think> reasoning
+      // before the final answer. Strip the thinking block.
+      let content = data.choices[0].message.content;
+      const thinkEnd = content.indexOf('</think>');
+      if (thinkEnd !== -1) {
+        content = content.slice(thinkEnd + '</think>'.length).trim();
+      }
+      return content;
     } catch (error) {
       lastError = error;
       if (error.message === 'K2Think returned empty response') {

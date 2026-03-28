@@ -16,20 +16,24 @@ Return ONLY a JSON array of keyword strings. No explanation, no numbering, no ma
 }
 
 function parseKeywordsResponse(responseText) {
-  const match = responseText.match(/\[[\s\S]*?\]/);
-  if (!match) {
+  // K2Think is a "thinking" model that outputs chain-of-thought reasoning
+  // before the final answer. Find all JSON arrays and try from the last one
+  // (most likely to be the final answer).
+  const matches = responseText.match(/\[[^\[\]]*\]/g);
+  if (!matches) {
     throw new Error('Failed to parse keywords from K2Think response');
   }
-  try {
-    const parsed = JSON.parse(match[0]);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      throw new Error('Failed to parse keywords from K2Think response');
+  for (let i = matches.length - 1; i >= 0; i--) {
+    try {
+      const parsed = JSON.parse(matches[i]);
+      if (Array.isArray(parsed) && parsed.length > 0 && parsed.every(k => typeof k === 'string')) {
+        return parsed;
+      }
+    } catch (e) {
+      // not valid JSON, try next
     }
-    return parsed;
-  } catch (e) {
-    if (e.message.startsWith('Failed to parse keywords')) throw e;
-    throw new Error('Failed to parse keywords from K2Think response');
   }
+  throw new Error('Failed to parse keywords from K2Think response');
 }
 
 module.exports = { buildKeywordsPrompt, parseKeywordsResponse };
