@@ -45,13 +45,13 @@ Owns all external API integrations and data fetching. No UI work.
 Owns all K2Think integration and prompt engineering. No UI work.
 
 **Tasks:**
-1. Set up K2Think API client and auth
-2. Build keyword generation prompt + `POST /keywords` endpoint (ticker → 4–6 keywords)
-3. Build bundle summary prompt + `POST /bundle-summary` endpoint (stock + markets → AI explanation)
-4. Prompt template: why these markets relate to the stock, why hedging makes sense, what risk is covered
-5. Caching for repeated ticker keyword requests
-6. Error handling for K2Think failures (fallback message, retry logic)
-7. Unit-testable prompt templates (isolated from the server)
+1. ~~Set up K2Think API client and auth~~ ✅
+2. ~~Build keyword generation prompt + `POST /keywords` endpoint (ticker → 4–6 keywords)~~ ✅
+3. ~~Build bundle summary prompt + `POST /bundle-summary` endpoint (stock + markets → AI explanation)~~ ✅
+4. ~~Prompt template: why these markets relate to the stock, why hedging makes sense, what risk is covered~~ ✅
+5. ~~Caching for repeated ticker keyword requests~~ ✅ (7-day TTL, in-memory)
+6. ~~Error handling for K2Think failures (fallback message, retry logic)~~ ✅ (3 retries, exponential backoff)
+7. ~~Unit-testable prompt templates (isolated from the server)~~ ✅ (30 tests passing)
 
 **Owns:**
 - `service-ai/k2think.js`
