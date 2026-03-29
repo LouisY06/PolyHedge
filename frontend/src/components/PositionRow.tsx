@@ -34,7 +34,7 @@ export default function PositionRow({ position, markets }: Props) {
       >
         {/* Left: ticker info — fixed width so sparklines align */}
         <div className="w-[120px] flex-shrink-0">
-          <span className="font-bold text-text-primary text-[15px] block">
+          <span className="font-bold text-text-primary text-[15px] block font-heading">
             {position.ticker}
           </span>
           <span className="text-text-muted text-[12px] block truncate">

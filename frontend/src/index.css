@@ -243,8 +243,19 @@ body {
   background-clip: text;
 }
 
+/* Font families */
+.font-heading {
+  font-family: 'Outfit', -apple-system, sans-serif;
+}
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
 /* Tabular nums */
-.tabular-nums { font-variant-numeric: tabular-nums; }
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
 
 /* Input focus */
 input:focus, textarea:focus {
