@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Position, Market, Bundle } from '../types'
+import type { Position, Market, Bundle, AnalysisResult } from '../types'
 
 interface AppState {
   isLoggedIn: boolean
@@ -10,6 +10,9 @@ interface AppState {
   selectedMarkets: Market[]
   activeCategory: string
   activeSort: string
+  analysis: AnalysisResult | null
+  analysisLoading: boolean
+  analysisError: string | null
 
   setLoggedIn: (v: boolean) => void
   setPositions: (p: Position[]) => void
@@ -20,6 +23,9 @@ interface AppState {
   clearSelections: () => void
   setActiveCategory: (c: string) => void
   setActiveSort: (s: string) => void
+  setAnalysis: (a: AnalysisResult | null) => void
+  setAnalysisLoading: (v: boolean) => void
+  setAnalysisError: (e: string | null) => void
 }
 
 export const useStore = create<AppState>()(
@@ -32,6 +38,9 @@ export const useStore = create<AppState>()(
       selectedMarkets: [],
       activeCategory: 'All',
       activeSort: 'Trending',
+      analysis: null,
+      analysisLoading: false,
+      analysisError: null,
 
       setLoggedIn: (v) => set({ isLoggedIn: v }),
       setPositions: (p) => set({ positions: p }),
@@ -51,12 +60,17 @@ export const useStore = create<AppState>()(
       clearSelections: () => set({ selectedMarkets: [] }),
       setActiveCategory: (c) => set({ activeCategory: c }),
       setActiveSort: (s) => set({ activeSort: s }),
+      setAnalysis: (a) => set({ analysis: a }),
+      setAnalysisLoading: (v) => set({ analysisLoading: v }),
+      setAnalysisError: (e) => set({ analysisError: e }),
     }),
     {
       name: 'polyhedge-storage',
       partialize: (state) => ({
         isLoggedIn: state.isLoggedIn,
+        positions: state.positions,
         bundles: state.bundles,
+        analysis: state.analysis,
       }),
     }
   )

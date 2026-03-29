@@ -93,6 +93,25 @@ app.post("/portfolio-markets", portfolioMarketsHandler);
 app.post("/analyze", analyzeHandler);
 
 // ---------------------------------------------------------------------------
+// GET /chart?ticker=AAPL
+// ---------------------------------------------------------------------------
+app.get("/chart", async (req, res) => {
+  const { ticker, range = "5d", interval = "15m" } = req.query;
+  if (!ticker || !ticker.trim()) {
+    return res.status(400).json({ error: "Missing required query parameter: ticker" });
+  }
+  try {
+    const { getChart } = require("./yahoo-finance");
+    const data = await getChart(ticker.trim(), { range, interval });
+    if (!data) return res.status(404).json({ error: `No chart data for "${ticker}"` });
+    return res.json(data);
+  } catch (err) {
+    console.error(`[/chart] Failed for ticker="${ticker}":`, err.message);
+    return res.status(502).json({ error: "Yahoo Finance error", detail: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /quote?ticker=AAPL
 // ---------------------------------------------------------------------------
 app.get("/quote", async (req, res) => {

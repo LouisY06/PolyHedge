@@ -163,6 +163,8 @@ function normalizeMarket(raw) {
   const outcomes = parseOutcomes(raw);
   const probability = parseProbability(raw);
 
+  const eventSlug = raw.events?.[0]?.slug || raw.slug || null;
+
   return {
     id: String(raw.id),
     title: raw.question || raw.title || "Untitled",
@@ -171,7 +173,7 @@ function normalizeMarket(raw) {
     volume: safeNumber(raw.volumeNum ?? raw.volume, 0),
     liquidity: safeNumber(raw.liquidityNum ?? raw.liquidity, 0),
     endDate: raw.endDate || raw.endDateIso || null,
-    url: raw.slug ? `${POLYMARKET_BASE_URL}/${raw.slug}` : null,
+    url: eventSlug ? `${POLYMARKET_BASE_URL}/${eventSlug}` : null,
     outcomes,
     isActive: raw.active === true,
     isClosed: raw.closed === true,
