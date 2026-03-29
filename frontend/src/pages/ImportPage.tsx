@@ -157,19 +157,19 @@ export default function ImportPage() {
               ))}
             </div>
             <button onClick={addRow}
-              className="w-full py-2 rounded-lg text-[12px] text-[#999] hover:text-[#666] transition-colors bg-transparent cursor-pointer border border-dashed border-[#D0D0D0] hover:border-[#999]">
+              className="w-full py-2 rounded-lg text-[12px] font-medium text-[#999] hover:text-[#666] transition-colors bg-transparent border border-dashed border-[#D0D0D0] cursor-pointer">
               <Plus size={12} className="inline mr-1" />Add row
             </button>
             <button onClick={handleManualSubmit} disabled={loading}
-              className="w-full font-medium py-3 rounded-lg text-[14px] disabled:opacity-30 cursor-pointer border-none text-white bg-[#1A1A1A] hover:bg-[#333] transition-colors flex items-center justify-center gap-2">
-              {loading ? <><Loader2 size={14} className="animate-spin" />Loading prices...</> : 'Import'}
+              className="w-full font-medium py-3 rounded-lg text-[14px] disabled:opacity-30 cursor-pointer border-none text-white bg-[#1A1A1A] hover:bg-[#333] transition-colors">
+              {loading ? <><Loader2 size={14} className="inline animate-spin mr-1.5" />Loading prices...</> : 'Import'}
             </button>
           </div>
         )}
 
         {error && <p className="text-red text-[13px] mt-3">{error}</p>}
 
-        <p className="text-[#B0B0B0] text-[11px] mt-6">Your data stays in your browser.</p>
+        <p className="text-[#B0B0B0] text-[11px] mt-6">Your data stays local.</p>
       </div>
     </div>
   )

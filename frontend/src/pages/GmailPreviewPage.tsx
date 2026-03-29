@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '../store/useStore'
 import { CheckSquare, Square, ArrowLeft, Download } from 'lucide-react'
+import { useStore } from '../store/useStore'
 
 export default function GmailPreviewPage() {
   const navigate = useNavigate()
@@ -17,7 +17,6 @@ export default function GmailPreviewPage() {
       navigate('/', { replace: true })
       return
     }
-    // Select all by default
     setSelected(new Set(gmailPreviewPositions.map((p) => p.ticker)))
   }, [gmailPreviewPositions, navigate])
 
@@ -60,33 +59,36 @@ export default function GmailPreviewPage() {
   const someChecked = selected.size > 0 && selected.size < gmailPreviewPositions.length
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-page px-4 py-12">
-      <div className="w-full max-w-[640px] animate-fade-in-up">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-extrabold text-text-primary tracking-tight">
-            Review Detected Positions
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[560px]">
+        {/* Back + Header */}
+        <div className="mb-8">
+          <button onClick={handleBack} className="text-[13px] text-[#999] hover:text-[#333] bg-transparent border-none cursor-pointer mb-4 p-0 transition-colors">
+            &larr; Back
+          </button>
+          <h1 className="text-[20px] font-semibold text-[#1A1A1A] tracking-tight">
+            Review positions
           </h1>
-          <p className="text-text-secondary text-sm mt-1">
-            {gmailPreviewPositions.length} position{gmailPreviewPositions.length !== 1 ? 's' : ''} found in your Gmail — select which to import
+          <p className="text-[#999] text-[13px] mt-1">
+            {gmailPreviewPositions.length} position{gmailPreviewPositions.length !== 1 ? 's' : ''} found in your Gmail
           </p>
         </div>
 
-        <div className="card-static overflow-hidden">
+        {/* Table */}
+        <div className="border border-[#E8E8E8] rounded-lg overflow-hidden">
           {/* Table header */}
-          <div className="px-5 pt-5 pb-3 border-b border-border">
-            <div className="grid grid-cols-[2rem_1fr_2fr_5rem_6rem_6rem] gap-3 items-center text-[11px] font-semibold text-text-muted uppercase tracking-wider">
+          <div className="px-4 py-3 border-b border-[#E8E8E8] bg-[#FAFAFA]">
+            <div className="grid grid-cols-[1.5rem_1fr_2fr_4.5rem_5.5rem_5.5rem] gap-3 items-center text-[11px] text-[#999] uppercase tracking-wider">
               <button
                 onClick={toggleAll}
-                className="flex items-center justify-center bg-transparent border-none cursor-pointer text-text-muted hover:text-text-primary transition-colors p-0"
-                aria-label={allChecked ? 'Deselect all' : 'Select all'}
+                className="flex items-center justify-center bg-transparent border-none cursor-pointer text-[#999] hover:text-[#333] transition-colors p-0"
               >
                 {allChecked ? (
-                  <CheckSquare size={16} className="text-blue" />
+                  <CheckSquare size={15} className="text-[#1A1A1A]" />
                 ) : someChecked ? (
-                  <CheckSquare size={16} className="text-text-muted opacity-50" />
+                  <CheckSquare size={15} className="text-[#C0C0C0]" />
                 ) : (
-                  <Square size={16} />
+                  <Square size={15} />
                 )}
               </button>
               <span>Ticker</span>
@@ -97,7 +99,7 @@ export default function GmailPreviewPage() {
             </div>
           </div>
 
-          {/* Table rows */}
+          {/* Rows */}
           <div className="max-h-[380px] overflow-y-auto">
             {gmailPreviewPositions.map((pos) => {
               const isSelected = selected.has(pos.ticker)
@@ -105,60 +107,49 @@ export default function GmailPreviewPage() {
                 <div
                   key={pos.ticker}
                   onClick={() => toggleRow(pos.ticker)}
-                  className={`grid grid-cols-[2rem_1fr_2fr_5rem_6rem_6rem] gap-3 items-center px-5 py-3.5 cursor-pointer transition-all duration-150 border-b border-border last:border-b-0 ${
-                    isSelected ? 'bg-blue-bg/40 hover:bg-blue-bg/60' : 'hover:bg-bg-hover'
+                  className={`grid grid-cols-[1.5rem_1fr_2fr_4.5rem_5.5rem_5.5rem] gap-3 items-center px-4 py-3 cursor-pointer transition-colors border-b border-[#F0F0F0] last:border-b-0 ${
+                    isSelected ? 'bg-white hover:bg-[#F8F8F8]' : 'bg-[#FAFAFA] opacity-50 hover:opacity-70'
                   }`}
                 >
                   <div className="flex items-center justify-center">
                     {isSelected ? (
-                      <CheckSquare size={16} className="text-blue" />
+                      <CheckSquare size={15} className="text-[#1A1A1A]" />
                     ) : (
-                      <Square size={16} className="text-text-muted" />
+                      <Square size={15} className="text-[#C0C0C0]" />
                     )}
                   </div>
-                  <span className="font-bold text-text-primary text-sm">{pos.ticker}</span>
-                  <span className="text-text-secondary text-sm truncate">{pos.name}</span>
-                  <span className="text-text-primary text-sm text-right">{pos.shares.toLocaleString()}</span>
-                  <span className="text-text-secondary text-sm text-right">{fmt(pos.avgCost)}</span>
-                  <span className="text-text-primary text-sm text-right font-medium">{fmt(pos.marketValue)}</span>
+                  <span className="font-semibold text-[#1A1A1A] text-[13px]">{pos.ticker}</span>
+                  <span className="text-[#999] text-[13px] truncate">{pos.name}</span>
+                  <span className="text-[#1A1A1A] text-[13px] text-right tabular-nums">{pos.shares.toLocaleString()}</span>
+                  <span className="text-[#999] text-[13px] text-right tabular-nums">{fmt(pos.avgCost)}</span>
+                  <span className="text-[#1A1A1A] text-[13px] text-right font-medium tabular-nums">{fmt(pos.marketValue)}</span>
                 </div>
               )
             })}
           </div>
-
-          {/* Footer summary + actions */}
-          <div className="px-5 py-4 border-t border-border bg-bg-hover/30">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-text-muted text-sm">
-                {selected.size} of {gmailPreviewPositions.length} selected
-              </span>
-              <div className="text-right">
-                <p className="text-[11px] text-text-muted uppercase tracking-wider font-semibold">Total Value</p>
-                <p className="text-lg font-extrabold text-text-primary">{fmt(totalValue)}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleBack}
-                className="flex-none flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-semibold text-text-secondary hover:text-text-primary transition-colors bg-transparent border border-border hover:border-text-muted cursor-pointer"
-              >
-                <ArrowLeft size={15} />
-                Back
-              </button>
-              <button
-                onClick={handleImport}
-                disabled={selected.size === 0}
-                className="btn-3d btn-3d-blue btn-glow flex-1 flex items-center justify-center gap-2 bg-blue text-white font-bold py-3 rounded-2xl text-[14px] disabled:opacity-30 cursor-pointer border-none"
-              >
-                <Download size={15} />
-                Import {selected.size > 0 ? selected.size : ''} Position{selected.size !== 1 ? 's' : ''}
-              </button>
-            </div>
-          </div>
         </div>
 
-        <p className="text-text-muted text-xs text-center mt-5">Your data stays local — never sent to our servers</p>
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-5">
+          <div>
+            <span className="text-[#999] text-[13px]">
+              {selected.size} of {gmailPreviewPositions.length} selected
+            </span>
+            {totalValue > 0 && (
+              <p className="text-[#1A1A1A] text-[15px] font-semibold">{fmt(totalValue)}</p>
+            )}
+          </div>
+          <button
+            onClick={handleImport}
+            disabled={selected.size === 0}
+            className="font-medium py-3 px-6 rounded-lg text-[14px] disabled:opacity-30 cursor-pointer border-none text-white bg-[#1A1A1A] hover:bg-[#333] transition-colors flex items-center gap-2"
+          >
+            <Download size={14} />
+            Import {selected.size > 0 ? selected.size : ''} position{selected.size !== 1 ? 's' : ''}
+          </button>
+        </div>
+
+        <p className="text-[#B0B0B0] text-[11px] mt-6">Your data stays local.</p>
       </div>
     </div>
   )
