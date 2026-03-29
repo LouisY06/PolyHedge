@@ -12,83 +12,67 @@ export default function HedgeExplainerModal({ onClose }: Props) {
       role="dialog"
       aria-modal="true"
     >
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative bg-bg-card border border-border rounded-xl max-w-lg w-full p-5 max-h-[85vh] overflow-y-auto shadow-xl"
+        className="relative bg-white rounded-2xl max-w-lg w-full p-7 max-h-[85vh] overflow-y-auto animate-fade-in-scale"
+        style={{ boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors bg-transparent border-none cursor-pointer p-0.5"
+          className="absolute top-5 right-5 text-text-muted hover:text-text-primary transition-colors bg-bg-page hover:bg-bg-hover w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer"
           aria-label="Close"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
 
-        <h2 className="text-base font-bold text-text-primary mb-4">
+        <h2 className="text-[20px] font-extrabold text-text-primary mb-6">
           What is Hedging?
         </h2>
 
-        <div className="space-y-4 text-sm text-text-secondary leading-relaxed">
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-lg bg-green-bg flex items-center justify-center flex-shrink-0">
-              <Shield size={14} className="text-green" />
+        <div className="space-y-6 text-[14px] text-text-secondary leading-relaxed">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)' }}>
+              <Shield size={18} className="text-green" />
             </div>
             <div>
-              <h3 className="text-text-primary font-semibold mb-0.5 text-sm">
-                Protection Against Loss
-              </h3>
-              <p className="text-xs">
-                Hedging is like insurance for your investments. You allocate capital
-                to positions that gain value when your main investments lose value.
-              </p>
+              <h3 className="text-text-primary font-bold mb-1">Protection Against Loss</h3>
+              <p>Hedging is like insurance for your investments. You allocate capital to positions that gain value when your main investments lose value.</p>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-bg flex items-center justify-center flex-shrink-0">
-              <ArrowRightLeft size={14} className="text-blue" />
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)' }}>
+              <ArrowRightLeft size={18} className="text-blue" />
             </div>
             <div>
-              <h3 className="text-text-primary font-semibold mb-0.5 text-sm">
-                How Prediction Markets Help
-              </h3>
-              <p className="text-xs">
-                Prediction markets let you bet on real-world events. Take positions
-                in markets related to your stocks to profit from events that would
-                hurt your portfolio.
-              </p>
+              <h3 className="text-text-primary font-bold mb-1">How Prediction Markets Help</h3>
+              <p>Prediction markets let you bet on real-world events. Take positions in markets related to your stocks to profit from events that would hurt your portfolio.</p>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-lg bg-red-bg flex items-center justify-center flex-shrink-0">
-              <TrendingDown size={14} className="text-red" />
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)' }}>
+              <TrendingDown size={18} className="text-purple" />
             </div>
             <div>
-              <h3 className="text-text-primary font-semibold mb-0.5 text-sm">
-                The Trade-Off
-              </h3>
-              <p className="text-xs">
-                More hedging = less risk but less upside. The hedge dial lets you
-                find the right balance.
-              </p>
+              <h3 className="text-text-primary font-bold mb-1">The Trade-Off</h3>
+              <p>More hedging = less risk but less upside. The hedge dial lets you find the right balance.</p>
             </div>
           </div>
 
-          <div className="bg-bg-page border border-border rounded-lg p-3">
-            <h3 className="text-text-primary font-semibold mb-1 text-sm">Example</h3>
-            <p className="text-xs">
-              You own $10K of NVIDIA. Worried about chip export restrictions?
-              A prediction market at 45% chance lets you profit if restrictions pass
-              and NVIDIA drops — offsetting your loss.
+          <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, #F8FAFC, #F1F5F9)' }}>
+            <h3 className="text-text-primary font-bold mb-2">Example</h3>
+            <p className="text-[13px]">
+              You own $10K of NVIDIA. Worried about chip export restrictions? A prediction market at 45% chance lets you profit if restrictions pass and NVIDIA drops — offsetting your loss.
             </p>
           </div>
         </div>
 
         <button
           onClick={onClose}
-          className="w-full mt-4 bg-text-primary text-bg-card font-semibold py-2.5 rounded-lg text-sm hover:opacity-90 transition-opacity cursor-pointer border-none"
+          className="btn-3d btn-3d-blue w-full mt-6 text-white font-bold py-3.5 rounded-xl text-[15px] cursor-pointer border-none"
+          style={{ background: 'linear-gradient(135deg, #3B82F6, #2563EB)' }}
         >
           Got it
         </button>

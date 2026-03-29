@@ -8,19 +8,11 @@ export default function HedgeDial({ value, onChange }: Props) {
   const lossReduction = Math.round(value * 0.7)
   const upsideRetained = Math.round(stockPercent + value * 0.15)
 
-  const getTooltip = () => {
-    if (value === 0) return 'No hedge — fully exposed to market movements.'
-    if (value <= 20) return `Light hedge: ${value}% in prediction markets.`
-    if (value <= 50) return `Balanced: ${value}% hedged. Moderate protection.`
-    if (value <= 80) return `Heavy hedge: ${value}% hedged. Strong protection.`
-    return `Max hedge: ${value}% in prediction markets.`
-  }
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs text-text-secondary font-medium">Hedge Ratio</label>
-        <span className="text-sm font-bold text-blue">{value}%</span>
+        <label className="text-[12px] text-text-secondary font-bold uppercase tracking-wider">Hedge Ratio</label>
+        <span className="text-[16px] font-extrabold tabular-nums gradient-text">{value}%</span>
       </div>
 
       <input
@@ -31,27 +23,25 @@ export default function HedgeDial({ value, onChange }: Props) {
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full cursor-pointer"
         style={{
-          background: `linear-gradient(to right, #3B82F6 ${value}%, #E5E7EB ${value}%)`,
+          background: `linear-gradient(to right, #3B82F6 0%, #8B5CF6 ${value}%, #E5E7EB ${value}%)`,
         }}
         aria-label="Hedge percentage"
       />
 
-      <div className="grid grid-cols-3 gap-1.5 text-center">
-        <div className="bg-bg-input rounded-md py-2">
-          <p className="text-[10px] text-text-muted">Stocks</p>
-          <p className="text-sm font-bold text-text-primary">{stockPercent}%</p>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="bg-bg-input rounded-xl py-3">
+          <p className="text-[9px] text-text-muted font-bold uppercase tracking-wider">Stocks</p>
+          <p className="text-[16px] font-extrabold text-text-primary tabular-nums mt-0.5">{stockPercent}%</p>
         </div>
-        <div className="bg-green-bg rounded-md py-2">
-          <p className="text-[10px] text-green">Loss ↓</p>
-          <p className="text-sm font-bold text-green">-{lossReduction}%</p>
+        <div className="rounded-xl py-3" style={{ background: 'linear-gradient(180deg, #ECFDF5, #D1FAE5)' }}>
+          <p className="text-[9px] text-green font-bold uppercase tracking-wider">Loss Reduced</p>
+          <p className="text-[16px] font-extrabold text-green tabular-nums mt-0.5">-{lossReduction}%</p>
         </div>
-        <div className="bg-blue-bg rounded-md py-2">
-          <p className="text-[10px] text-blue">Upside</p>
-          <p className="text-sm font-bold text-blue">{upsideRetained}%</p>
+        <div className="rounded-xl py-3" style={{ background: 'linear-gradient(180deg, #EFF6FF, #DBEAFE)' }}>
+          <p className="text-[9px] text-blue font-bold uppercase tracking-wider">Upside</p>
+          <p className="text-[16px] font-extrabold text-blue tabular-nums mt-0.5">{upsideRetained}%</p>
         </div>
       </div>
-
-      <p className="text-xs text-text-muted leading-relaxed">{getTooltip()}</p>
     </div>
   )
 }

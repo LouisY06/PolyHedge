@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LogOut, TrendingUp, TrendingDown, Plus, Package } from 'lucide-react'
+import { LogOut, TrendingUp, TrendingDown, Plus, Package, Shield, BarChart3 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { fetchPositions, fetchAllMarkets } from '../api/client'
 import type { Bundle } from '../types'
@@ -63,87 +63,99 @@ export default function Dashboard() {
     setHedgePercent(50)
   }
 
+  const activeMarket = selectedMarkets.length > 0 ? selectedMarkets[selectedMarkets.length - 1] : null
+
   return (
     <div className="min-h-screen bg-bg-page">
       {/* Header */}
-      <header className="bg-bg-card border-b border-border sticky top-0 z-50">
-        <div className="max-w-[1200px] mx-auto px-4 h-[56px] flex items-center justify-between">
-          <span className="text-text-primary font-bold text-lg tracking-tight">
-            PolyHedge
-          </span>
+      <header className="bg-white/80 backdrop-blur-xl border-b border-black/5 sticky top-0 z-50">
+        <div className="max-w-[1200px] mx-auto px-5 h-[60px] flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
+              <Shield size={16} className="text-white" strokeWidth={2.5} />
+            </div>
+            <span className="text-text-primary font-extrabold text-[18px] tracking-tight">
+              Poly<span className="gradient-text">Hedge</span>
+            </span>
+          </div>
           <button
             onClick={() => setLoggedIn(false)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm text-text-muted hover:text-red hover:bg-bg-hover transition-colors bg-transparent border-none cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] text-text-muted hover:text-red hover:bg-red-bg transition-all duration-200 bg-transparent border-none cursor-pointer font-medium"
             aria-label="Log out"
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
+            <span className="hidden sm:inline">Log out</span>
           </button>
         </div>
       </header>
 
-      <main className="max-w-[1200px] mx-auto px-4 py-5">
-        {/* Portfolio Summary */}
+      <main className="max-w-[1200px] mx-auto px-5 py-6">
+        {/* Portfolio Hero */}
         {!loading && (
-          <div className="bg-bg-card border border-border rounded-lg p-5 mb-5">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div className="hero-card p-7 mb-7 animate-fade-in-up">
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
               <div>
-                <p className="text-text-secondary text-xs font-medium mb-0.5">
+                <p className="text-white/50 text-[13px] font-medium mb-2 uppercase tracking-widest">
                   Portfolio Value
                 </p>
-                <p className="text-3xl font-bold text-text-primary tracking-tight">
+                <p className="text-[44px] font-extrabold text-white tracking-tight leading-none tabular-nums animate-count-up">
                   ${totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
                 <div
-                  className={`flex items-center gap-1 mt-1 text-sm font-semibold ${
+                  className={`flex items-center gap-2 mt-3 text-[15px] font-semibold tabular-nums ${
                     isPositive ? 'text-green' : 'text-red'
                   }`}
                 >
-                  {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {isPositive ? '+' : ''}${totalGain.toFixed(2)} (
-                  {isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}%)
+                  <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[13px] ${
+                    isPositive ? 'bg-green/20' : 'bg-red/20'
+                  }`}>
+                    {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {isPositive ? '+' : ''}{totalGainPercent.toFixed(2)}%
+                  </div>
+                  <span className="text-white/40 text-[13px]">
+                    {isPositive ? '+' : ''}${totalGain.toFixed(2)}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="bg-bg-page rounded-lg px-3 py-1.5 text-center min-w-[56px]">
-                  <p className="text-text-muted text-[10px] font-medium">Positions</p>
-                  <p className="text-text-primary font-bold">{positions.length}</p>
-                </div>
-                <div className="bg-bg-page rounded-lg px-3 py-1.5 text-center min-w-[56px]">
-                  <p className="text-text-muted text-[10px] font-medium">Markets</p>
-                  <p className="text-text-primary font-bold">{markets.length}</p>
-                </div>
-                <div className="bg-bg-page rounded-lg px-3 py-1.5 text-center min-w-[56px]">
-                  <p className="text-text-muted text-[10px] font-medium">Bundles</p>
-                  <p className="text-text-primary font-bold">{bundles.length}</p>
-                </div>
+              <div className="flex items-center gap-3">
+                {[
+                  { label: 'Positions', value: positions.length, color: '#3B82F6' },
+                  { label: 'Markets', value: markets.length, color: '#8B5CF6' },
+                  { label: 'Bundles', value: bundles.length, color: '#10B981' },
+                ].map((stat) => (
+                  <div key={stat.label} className="text-center px-4 py-3 rounded-xl min-w-[80px]" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                    <p className="text-white/40 text-[10px] font-semibold uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-white font-bold text-[22px] tabular-nums mt-0.5">{stat.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Positions */}
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[13px] font-bold text-text-secondary uppercase tracking-wider">
                 Your Positions & Related Events
               </h2>
               <button
                 onClick={() => setShowExplainer(true)}
-                className="text-xs text-blue hover:underline bg-transparent border-none cursor-pointer font-medium"
+                className="text-[13px] text-blue hover:text-purple bg-transparent border-none cursor-pointer font-semibold transition-colors duration-200"
               >
                 What is hedging?
               </button>
             </div>
 
             {loading ? (
-              <div className="space-y-3">
+              <div className="space-y-3 stagger">
                 {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg" />
+                  <Skeleton key={i} className="h-[76px]" />
                 ))}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 stagger">
                 {positions.map((pos) => {
                   const relatedMarkets = markets.filter((m) =>
                     m.relatedTickers.includes(pos.ticker)
@@ -161,106 +173,99 @@ export default function Dashboard() {
           </div>
 
           {/* Right: Trade Panel */}
-          <div className="space-y-4">
-            {/* Trade card */}
-            <div className="bg-bg-card border border-border rounded-lg sticky top-[72px] shadow-sm">
+          <div className="space-y-5">
+            <div className="card-static sticky top-[76px] overflow-hidden">
               {/* Event title */}
               <div className="px-5 pt-5 pb-3">
-                {selectedMarkets.length > 0 ? (
-                  <>
-                    <p className="text-base font-bold text-text-primary leading-snug">
-                      {selectedMarkets[selectedMarkets.length - 1].title}
+                {activeMarket ? (
+                  <div className="animate-fade-in-scale">
+                    <p className="text-[16px] font-bold text-text-primary leading-snug">
+                      {activeMarket.title}
                     </p>
-                    <p className="text-xs text-text-muted mt-0.5">
-                      {selectedMarkets[selectedMarkets.length - 1].category} · ${(selectedMarkets[selectedMarkets.length - 1].volume / 1_000_000).toFixed(1)}M Vol.
+                    <p className="text-[12px] text-text-muted mt-1.5 font-medium">
+                      {activeMarket.category} · <span className="tabular-nums">${(activeMarket.volume / 1_000_000).toFixed(1)}M</span> Vol.
                     </p>
-                  </>
+                  </div>
                 ) : (
-                  <p className="text-sm text-text-muted">
-                    Select an event to trade
-                  </p>
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 rounded-2xl bg-bg-input flex items-center justify-center mx-auto mb-3">
+                      <BarChart3 size={20} className="text-text-muted" />
+                    </div>
+                    <p className="text-[14px] text-text-secondary font-semibold">
+                      Select an event to trade
+                    </p>
+                    <p className="text-[12px] text-text-muted mt-1">
+                      Click on a market from your positions
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div className="px-5 pb-5 space-y-4">
+              <div className="px-5 pb-5 space-y-5">
                 {/* Buy / Sell tabs */}
-                <div className="flex items-center">
-                  <button
-                    onClick={() => setTradeMode('buy')}
-                    className={`text-[15px] bg-transparent border-none cursor-pointer transition-colors mr-3 ${
-                      tradeMode === 'buy'
-                        ? 'text-text-primary font-bold'
-                        : 'text-text-muted font-medium hover:text-text-secondary'
-                    }`}
-                  >
-                    Buy
-                  </button>
-                  <button
-                    onClick={() => setTradeMode('sell')}
-                    className={`text-[15px] bg-transparent border-none cursor-pointer transition-colors ${
-                      tradeMode === 'sell'
-                        ? 'text-text-primary font-bold'
-                        : 'text-text-muted font-medium hover:text-text-secondary'
-                    }`}
-                  >
-                    Sell
-                  </button>
-                  <span className="ml-auto text-sm text-text-secondary flex items-center gap-1 cursor-pointer">
+                <div className="flex items-center border-b border-border">
+                  {(['buy', 'sell'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setTradeMode(mode)}
+                      className={`text-[15px] bg-transparent border-none cursor-pointer transition-all duration-200 mr-5 pb-3 capitalize ${
+                        tradeMode === mode
+                          ? 'text-text-primary font-bold border-b-[3px] border-blue -mb-[1px]'
+                          : 'text-text-muted font-medium hover:text-text-secondary'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                  <span className="ml-auto text-[13px] text-text-muted flex items-center gap-1 cursor-pointer hover:text-text-secondary transition-colors pb-3">
                     Market
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 4L5 6.5L7.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>
                 </div>
 
                 {/* Outcome buttons */}
-                {selectedMarkets.length > 0 && (() => {
-                  const activeMarket = selectedMarkets[selectedMarkets.length - 1]
-                  return (
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setTradeSide('yes')}
-                        className={`btn-3d flex-1 py-3 rounded-full text-sm font-semibold cursor-pointer border ${
-                          tradeSide === 'yes'
-                            ? 'bg-bg-card border-text-primary text-text-primary'
-                            : 'bg-bg-input border-border text-text-secondary hover:border-text-muted'
-                        }`}
-                      >
-                        Yes {activeMarket.confidence}¢
-                      </button>
-                      <button
-                        onClick={() => setTradeSide('no')}
-                        className={`btn-3d flex-1 py-3 rounded-full text-sm font-semibold cursor-pointer border ${
-                          tradeSide === 'no'
-                            ? 'bg-bg-card border-text-primary text-text-primary'
-                            : 'bg-bg-input border-border text-text-secondary hover:border-text-muted'
-                        }`}
-                      >
-                        No {100 - activeMarket.confidence}¢
-                      </button>
-                    </div>
-                  )
-                })()}
+                {activeMarket && (
+                  <div className="flex gap-3">
+                    {(['yes', 'no'] as const).map((side) => {
+                      const price = side === 'yes' ? activeMarket.confidence : 100 - activeMarket.confidence
+                      return (
+                        <button
+                          key={side}
+                          onClick={() => setTradeSide(side)}
+                          className={`btn-3d flex-1 py-3.5 rounded-2xl text-[14px] font-bold cursor-pointer border-2 transition-all duration-150 capitalize ${
+                            tradeSide === side
+                              ? 'bg-white border-text-primary text-text-primary shadow-lg'
+                              : 'bg-bg-input border-transparent text-text-muted hover:border-border-focus hover:text-text-secondary'
+                          }`}
+                        >
+                          {side} <span className="tabular-nums">{price}¢</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {/* Amount */}
                 <div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-[15px] text-text-primary font-medium">Amount</span>
-                    <span className={`text-4xl font-bold tracking-tight ${tradeAmount > 0 ? 'text-text-primary' : 'text-text-muted/40'}`}>
+                  <div className="flex items-baseline justify-between mb-4">
+                    <span className="text-[15px] text-text-primary font-semibold">Amount</span>
+                    <span className={`text-[42px] font-extrabold tracking-tight tabular-nums leading-none transition-colors duration-200 ${tradeAmount > 0 ? 'text-text-primary' : 'text-border'}`}>
                       ${tradeAmount}
                     </span>
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2">
                     {[1, 5, 10, 100].map((v) => (
                       <button
                         key={v}
                         onClick={() => setTradeAmount((prev) => prev + v)}
-                        className="btn-3d text-[13px] font-medium py-1.5 px-3 rounded-full border border-border text-text-primary hover:bg-bg-hover cursor-pointer bg-bg-card"
+                        className="btn-3d flex-1 text-[13px] font-semibold py-2.5 rounded-xl border border-border text-text-primary cursor-pointer bg-white hover:bg-bg-hover"
                       >
                         +${v}
                       </button>
                     ))}
                     <button
                       onClick={() => setTradeAmount(0)}
-                      className="btn-3d text-[13px] font-medium py-1.5 px-3 rounded-full border border-border text-text-secondary hover:bg-bg-hover cursor-pointer bg-bg-card"
+                      className="btn-3d text-[13px] font-semibold py-2.5 px-4 rounded-xl border border-border text-text-muted cursor-pointer bg-white hover:bg-bg-hover"
                     >
                       Max
                     </button>
@@ -270,7 +275,7 @@ export default function Dashboard() {
                 {/* Trade button */}
                 <button
                   onClick={async () => {
-                    if (tradeAmount <= 0 || selectedMarkets.length === 0) return
+                    if (tradeAmount <= 0 || !activeMarket) return
                     setTrading(true)
                     await new Promise((r) => setTimeout(r, 800))
                     setTrading(false)
@@ -280,14 +285,29 @@ export default function Dashboard() {
                       setTradeAmount(0)
                     }, 2000)
                   }}
-                  disabled={tradeAmount <= 0 || selectedMarkets.length === 0 || trading}
-                  className="btn-3d btn-3d-blue w-full bg-blue text-white font-bold py-3.5 rounded-full text-[15px] disabled:opacity-30 cursor-pointer border-none"
+                  disabled={tradeAmount <= 0 || !activeMarket || trading}
+                  className={`btn-glow w-full text-white font-bold py-4 rounded-2xl text-[16px] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-none transition-all duration-200 ${
+                    tradeSuccess ? 'animate-fade-in-scale' : ''
+                  }`}
+                  style={{
+                    background: tradeSuccess
+                      ? 'linear-gradient(135deg, #10B981, #059669)'
+                      : 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                    boxShadow: tradeSuccess
+                      ? '0 4px 0 0 #047857, 0 4px 20px rgba(16,185,129,0.3)'
+                      : '0 4px 0 0 #1D4ED8, 0 4px 20px rgba(59,130,246,0.3)',
+                  }}
                 >
-                  {trading
-                    ? 'Processing...'
-                    : tradeSuccess
-                    ? 'Order placed!'
-                    : 'Trade'}
+                  {trading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : tradeSuccess ? (
+                    'Order placed!'
+                  ) : (
+                    'Trade'
+                  )}
                 </button>
 
                 <p className="text-text-muted text-[11px] text-center">
@@ -296,34 +316,37 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Hedge Builder (below trade card) */}
-            <div className="bg-bg-card border border-border rounded-lg p-4 space-y-4">
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+            {/* Hedge Builder */}
+            <div className="card-static p-5 space-y-4">
+              <h3 className="text-[12px] font-bold text-text-secondary uppercase tracking-wider flex items-center gap-2">
+                <Shield size={13} className="text-purple" />
                 Hedge Builder
               </h3>
 
-              {selectedMarkets.length > 0 && (
-                <div className="space-y-1">
+              {selectedMarkets.length > 0 ? (
+                <div className="space-y-2">
                   {selectedMarkets.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between text-xs py-1"
+                      className="flex items-center justify-between text-[12px] py-2 px-3 rounded-xl bg-bg-page border border-border"
                     >
-                      <span className="text-text-primary truncate flex-1 mr-2">
+                      <span className="text-text-primary truncate flex-1 mr-3 font-medium">
                         {m.title}
                       </span>
-                      <span className="text-green font-bold flex-shrink-0">
+                      <span className="text-green font-bold tabular-nums flex-shrink-0">
                         {m.confidence}%
                       </span>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-text-muted text-[12px] text-center py-2">Select events to build a hedge bundle</p>
               )}
 
               {relatedStocks.length > 0 && (
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-[12px] px-1">
                   <span className="text-text-muted">Related stocks</span>
-                  <span className="text-text-primary font-semibold">
+                  <span className="text-text-primary font-bold">
                     {relatedStocks.map((s) => s.ticker).join(', ')}
                   </span>
                 </div>
@@ -335,14 +358,15 @@ export default function Dashboard() {
                 type="text"
                 value={bundleName}
                 onChange={(e) => setBundleName(e.target.value)}
-                placeholder="Bundle name"
-                className="w-full bg-bg-input border border-border rounded-lg px-3 py-2 text-text-primary text-sm outline-none focus:border-blue transition-colors"
+                placeholder="Bundle name..."
+                className="w-full bg-bg-input border border-border rounded-xl px-4 py-3 text-text-primary text-[13px] outline-none transition-all placeholder:text-text-muted"
               />
 
               <button
                 onClick={handleSaveBundle}
                 disabled={!bundleName.trim() || selectedMarkets.length === 0}
-                className="btn-3d w-full flex items-center justify-center gap-1.5 bg-text-primary text-bg-card font-semibold py-2.5 rounded-lg text-sm disabled:opacity-30 cursor-pointer border-none"
+                className="btn-3d w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-[13px] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-none text-white"
+                style={{ background: 'linear-gradient(135deg, #1E293B, #334155)' }}
               >
                 <Plus size={15} />
                 Save Bundle
@@ -353,9 +377,9 @@ export default function Dashboard() {
 
         {/* Saved Bundles */}
         {bundles.length > 0 && (
-          <section className="mt-6">
-            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Package size={12} />
+          <section className="mt-8 animate-fade-in-up">
+            <h2 className="text-[12px] font-bold text-text-secondary uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Package size={14} className="text-purple" />
               Saved Bundles
             </h2>
             <div className="space-y-3">
