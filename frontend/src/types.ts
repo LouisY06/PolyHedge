@@ -86,32 +86,3 @@ export interface AnalysisResult {
   selectedMarkets: SelectedMarket[]
   portfolioSummary: PortfolioSummary
 }
-
-// ── Hex Backtest Types ──────────────────────
-
-export interface HedgeEffectivenessRow {
-  ticker: string
-  marketTitle: string
-  correlation: number
-  score: 'Strong' | 'Moderate' | 'Weak' | 'None'
-  explanation: string
-}
-
-export interface BacktestData {
-  dates: string[]
-  portfolioOnly: number[]
-  portfolioWithHedge: number[]
-}
-
-export interface BacktestSummary {
-  maxDrawdownReduction: string
-  riskAdjustedImprovement: string
-  bestHedge: string
-  worstHedge: string
-}
-
-export interface BacktestResult {
-  hedgeEffectiveness: HedgeEffectivenessRow[]
-  backtest: BacktestData
-  summary: BacktestSummary
-}

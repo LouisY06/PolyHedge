@@ -15,7 +15,6 @@ const {
 const { handler: portfolioMarketsHandler } = require("./routes/portfolio-markets");
 const { handler: analyzeHandler } = require("./routes/analyze");
 const { handler: authGoogleHandler } = require("./routes/auth-google");
-const { handler: hexRunHandler } = require("./routes/hex");
 
 // service-ai routes (mounted directly instead of a separate server)
 const keywordsRouter = require("../service-ai/routes/keywords");
@@ -200,10 +199,6 @@ app.post("/analyze", analyzeHandler);
 // ---------------------------------------------------------------------------
 app.post("/auth/google", authGoogleHandler);
 
-// ---------------------------------------------------------------------------
-// POST /hex/run — Hex backtest
-// ---------------------------------------------------------------------------
-app.post("/hex/run", hexRunHandler);
 
 // ---------------------------------------------------------------------------
 // GET /chart?ticker=AAPL

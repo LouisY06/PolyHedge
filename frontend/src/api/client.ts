@@ -1,4 +1,4 @@
-import type { Position, Market, BundleSummary, AnalysisResult, SelectedMarket, BacktestResult } from '../types'
+import type { Position, Market, BundleSummary, AnalysisResult } from '../types'
 import { mockBundleSummary } from './mock-data'
 
 const API_BASE = 'http://localhost:4000'
@@ -148,32 +148,3 @@ export async function fetchAllMarkets(positions: Position[]): Promise<Market[]> 
 export async function fetchBundleSummary(_stocks: Position[], _markets: Market[]): Promise<BundleSummary> { await delay(1200); return mockBundleSummary }
 
 export async function loginRobinhood(_email: string, _password: string): Promise<boolean> { await delay(1000); return true }
-
-// ── Hex Backtest ──────────────────────────────────────
-
-export async function runBacktest(
-  positions: Position[],
-  markets: SelectedMarket[]
-): Promise<BacktestResult> {
-  const totalValue = positions.reduce((s, p) => s + (p.marketValue || p.shares * p.avgCost), 0)
-  const holdings = positions.map((p) => {
-    const value = p.marketValue || p.shares * p.avgCost
-    return { ticker: p.ticker, weight: totalValue > 0 ? Math.round((value / totalValue) * 100) : 0 }
-  })
-  const marketData = markets.map((m) => ({
-    title: m.title,
-    probability: m.probability,
-    marketId: m.marketId,
-  }))
-
-  const res = await fetch(`${API_BASE}/hex/run`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ holdings, markets: marketData }),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Backtest failed' }))
-    throw new Error(err.error || 'Backtest failed')
-  }
-  return res.json()
-}
