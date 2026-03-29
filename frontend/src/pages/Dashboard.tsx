@@ -7,6 +7,7 @@ import BundleCard from '../components/BundleCard'
 import HedgeExplainerModal from '../components/HedgeExplainerModal'
 import Skeleton from '../components/Skeleton'
 import AnalysisView from '../components/AnalysisView'
+import PayoffChart from '../components/PayoffChart'
 
 export default function Dashboard() {
   const positions = useStore((s) => s.positions)
@@ -490,6 +491,14 @@ function TradeCard({ market }: { market: import('../types').Market }) {
             </div>
           </div>
         )}
+
+        {/* Payoff Chart */}
+        <PayoffChart
+          probability={market.confidence}
+          amount={tradeAmount}
+          side={tradeSide}
+          mode={tradeMode}
+        />
 
         {/* Trade button */}
         <button
