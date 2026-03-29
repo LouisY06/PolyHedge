@@ -118,9 +118,16 @@ function rankMarketsForHolding(candidates, holding, keywords) {
     }
 
     // Penalize likely-irrelevant sports/entertainment matches
-    // when the keyword was a geopolitical or sector term
     if (looksLikeSportsMarket(title) && !isSportsKeyword(kw)) {
-      score -= 15;
+      score -= 30;
+    }
+
+    // Penalize dead/resolved markets (0-2% or 98-100% near expiry)
+    if (market.probability != null && market.endDate) {
+      const daysLeft = Math.max(0, (new Date(market.endDate).getTime() - Date.now()) / 86400000);
+      if (daysLeft < 7 && (market.probability <= 2 || market.probability >= 98)) {
+        score -= 20;
+      }
     }
 
     return {
@@ -134,11 +141,12 @@ function rankMarketsForHolding(candidates, holding, keywords) {
   });
 
   return scored
+    .filter((s) => s.relevanceScore > 0)
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, MARKETS_PER_HOLDING);
 }
 
-const SPORTS_PATTERNS = /\b(nba|nfl|nhl|mlb|fifa|world cup|finals|playoff|premier league|champions league|win the 202\d|bout|fight|ufc|boxing)\b/i;
+const SPORTS_PATTERNS = /\b(nba|nfl|nhl|mlb|fifa|world cup|finals|playoff|premier league|champions league|win the 202\d|bout|fight|ufc|boxing|masters tournament|grand slam|super bowl|formula 1|f1 grand prix|win the|mrbeast|presidential nomination|democratic nomin|republican nomin|ballon d'or|mvp award|heisman|ryder cup|olympics|olympic)\b/i;
 
 function looksLikeSportsMarket(title) {
   return SPORTS_PATTERNS.test(title);

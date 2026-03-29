@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { LogOut, Package, RefreshCw, Loader2, X } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { fetchAllMarkets, analyzePortfolio } from '../api/client'
@@ -19,6 +19,8 @@ export default function Dashboard() {
   const analysisLoading = useStore((s) => s.analysisLoading)
   const analysisError = useStore((s) => s.analysisError)
   const setAnalysis = useStore((s) => s.setAnalysis)
+  const analysisCache = useStore((s) => s.analysisCache)
+  const setAnalysisCache = useStore((s) => s.setAnalysisCache)
   const setAnalysisLoading = useStore((s) => s.setAnalysisLoading)
   const setAnalysisError = useStore((s) => s.setAnalysisError)
 
@@ -26,19 +28,60 @@ export default function Dashboard() {
   const [showExplainer, setShowExplainer] = useState(false)
   const [objective, setObjective] = useState('hedge')
 
+  const pendingObjectives = useRef<Set<string>>(new Set())
+
+  // Fetch markets only if we don't have them persisted
   useEffect(() => {
     if (positions.length === 0) { setLoading(false); return }
+    if (markets.length > 0) { setLoading(false); return }
     fetchAllMarkets(positions).then(setMarkets).finally(() => setLoading(false))
   }, [positions.length])
 
+  // Restore analysis from cache on mount, or run if no cache exists
   useEffect(() => {
-    if (positions.length > 0 && !analysis && !analysisLoading) runAnalysis()
+    if (positions.length === 0) return
+
+    // If we have cached results, restore and skip API calls
+    if (Object.keys(analysisCache).length > 0) {
+      if (!analysis && analysisCache['hedge']) setAnalysis(analysisCache['hedge'])
+      return
+    }
+
+    if (analysisLoading) return
+
+    // No cache — run hedge first, then background others
+    runAnalysis('hedge')
+    setTimeout(() => {
+      runAnalysisBg('amplify')
+      runAnalysisBg('explore')
+    }, 100)
   }, [positions.length])
 
+  const runAnalysisBg = async (obj: string) => {
+    if (positions.length === 0 || pendingObjectives.current.has(obj)) return
+    if (analysisCache[obj]) return // already cached
+    pendingObjectives.current.add(obj)
+    try {
+      const result = await analyzePortfolio(positions, { objective: obj, beginnerMode: true })
+      setAnalysisCache({ ...analysisCache, [obj]: result })
+    } catch { /* background — no UI error */ }
+    finally { pendingObjectives.current.delete(obj) }
+  }
+
   const runAnalysis = async (obj?: string) => {
+    const target = obj || objective
+    // If cached, just display it
+    if (analysisCache[target]) {
+      setAnalysis(analysisCache[target])
+      return
+    }
     if (positions.length === 0) return
     setAnalysisLoading(true); setAnalysisError(null)
-    try { setAnalysis(await analyzePortfolio(positions, { objective: obj || objective, beginnerMode: true })) }
+    try {
+      const result = await analyzePortfolio(positions, { objective: target, beginnerMode: true })
+      setAnalysisCache({ ...analysisCache, [target]: result })
+      setAnalysis(result)
+    }
     catch (err: unknown) { setAnalysisError(err instanceof Error ? err.message : 'Analysis failed') }
     finally { setAnalysisLoading(false) }
   }
@@ -59,7 +102,7 @@ export default function Dashboard() {
             PolyHedge
           </span>
           <button
-            onClick={() => { setLoggedIn(false); setAnalysis(null) }}
+            onClick={() => { setLoggedIn(false); setAnalysis(null); setAnalysisCache({}); setMarkets([]) }}
             className="flex items-center gap-1.5 text-[13px] text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer transition-colors duration-150"
             aria-label="Log out"
           >
@@ -96,32 +139,42 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[13px] font-bold text-text-secondary uppercase tracking-wider">Portfolio Analysis</h2>
                 <div className="flex items-center gap-1">
-                  {(['hedge', 'amplify', 'explore'] as const).map((o) => (
-                    <button key={o} onClick={() => { setObjective(o); runAnalysis(o) }}
+                  {(['index', 'hedge', 'amplify', 'explore'] as const).map((o) => (
+                    <button key={o} onClick={() => {
+                      setObjective(o)
+                      if (o === 'index') return // index is computed client-side
+                      if (analysisCache[o]) { setAnalysis(analysisCache[o]); setAnalysisError(null) } else { runAnalysis(o) }
+                    }}
                       className={`text-[11px] px-2.5 py-1 bg-transparent border-none cursor-pointer capitalize transition-colors duration-150 ${
                         objective === o ? 'text-text-primary font-medium' : 'text-text-muted hover:text-text-secondary'
                       }`}>{o}</button>
                   ))}
-                  <button onClick={() => runAnalysis()} disabled={analysisLoading || positions.length === 0}
+                  <button onClick={() => runAnalysis()} disabled={analysisLoading || positions.length === 0 || objective === 'index'}
                     className="text-[11px] text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer disabled:opacity-30 transition-colors duration-150 ml-1">
                     <RefreshCw size={10} className={`inline mr-0.5 ${analysisLoading ? 'animate-spin' : ''}`} />
                     {analysisLoading ? 'Running' : 'Analyze'}
                   </button>
                 </div>
               </div>
-              {analysisLoading && !analysis && (
-                <div className="py-8 text-center">
-                  <Loader2 size={16} className="animate-spin text-text-muted mx-auto mb-2" />
-                  <p className="text-text-muted text-[13px]">Analyzing portfolio...</p>
-                </div>
+              {objective === 'index' ? (
+                <IndexView analysisCache={analysisCache} />
+              ) : (
+                <>
+                  {analysisLoading && !analysis && (
+                    <div className="py-8 text-center">
+                      <Loader2 size={16} className="animate-spin text-text-muted mx-auto mb-2" />
+                      <p className="text-text-muted text-[13px]">Analyzing portfolio...</p>
+                    </div>
+                  )}
+                  {analysisError && (
+                    <div className="py-6 text-center">
+                      <p className="text-red text-[13px]">{analysisError}</p>
+                      <button onClick={() => runAnalysis()} className="text-[12px] text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer mt-2 underline">Try again</button>
+                    </div>
+                  )}
+                  {analysis && <AnalysisView analysis={analysis} />}
+                </>
               )}
-              {analysisError && (
-                <div className="py-6 text-center">
-                  <p className="text-red text-[13px]">{analysisError}</p>
-                  <button onClick={() => runAnalysis()} className="text-[12px] text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer mt-2 underline">Try again</button>
-                </div>
-              )}
-              {analysis && <AnalysisView analysis={analysis} />}
             </section>
 
             {/* Positions */}
@@ -198,6 +251,112 @@ export default function Dashboard() {
   )
 }
 
+// ── Index View ──────────────────────────────────────────
+// Computes a diversified "prediction market index" from cached analysis results.
+// Aggregates markets across objectives, computes edge-weighted allocation,
+// applies quarter-Kelly sizing capped at 15% per position.
+
+function IndexView({ analysisCache }: {
+  analysisCache: Record<string, import('../types').AnalysisResult>
+}) {
+  // Gather all actionable markets across cached objectives
+  const seen = new Map<string, {
+    title: string; ticker: string; probability: number; edge: number;
+    confidence: number; qualityScore: number; holdingWeight: number;
+    relation: string; action: string; url?: string; fairProbability: number | null
+  }>()
+
+  for (const result of Object.values(analysisCache)) {
+    for (const sm of result.selectedMarkets) {
+      if (sm.action === 'SKIP' || sm.action === 'WATCH') continue
+      const existing = seen.get(sm.marketId)
+      // Keep the version with the highest quality score
+      if (!existing || sm.qualityScore > existing.qualityScore) {
+        seen.set(sm.marketId, {
+          title: sm.title, ticker: sm.ticker, probability: sm.probability,
+          edge: sm.edge, confidence: sm.confidence, qualityScore: sm.qualityScore,
+          holdingWeight: sm.holdingWeight, relation: sm.relation, action: sm.action,
+          url: sm.url, fairProbability: sm.fairProbability,
+        })
+      }
+    }
+  }
+
+  if (seen.size === 0) {
+    return <p className="text-text-muted text-[13px] py-6">Waiting for analysis data. Switch to hedge first, then come back.</p>
+  }
+
+  // Compute allocation weights using edge + quality
+  const entries = Array.from(seen.entries()).map(([id, m]) => {
+    const absEdge = Math.abs(m.edge)
+    // Quarter-Kelly: (edge / odds) / 4, simplified
+    const p = m.probability > 0 && m.probability < 1 ? m.probability : 0.5
+    const kellyFraction = Math.max(0, absEdge / (1 - p)) / 4
+    // Weight = kelly × quality × confidence × holdingWeight
+    const rawWeight = kellyFraction * m.qualityScore * m.confidence * Math.max(m.holdingWeight / 100, 0.05)
+    return { id, ...m, rawWeight: Math.max(rawWeight, 0) }
+  }).filter((e) => e.rawWeight > 0)
+
+  if (entries.length === 0) {
+    return <p className="text-text-muted text-[13px] py-6">No markets with sufficient edge to include in the index.</p>
+  }
+
+  // Normalize to 100%, cap each at 15%, redistribute excess
+  let totalWeight = entries.reduce((s, e) => s + e.rawWeight, 0)
+  let allocations = entries.map((e) => ({ ...e, pct: (e.rawWeight / totalWeight) * 100 }))
+
+  // Cap and redistribute (iterate twice to stabilize)
+  for (let round = 0; round < 3; round++) {
+    let excess = 0
+    let uncappedTotal = 0
+    for (const a of allocations) {
+      if (a.pct > 15) { excess += a.pct - 15; a.pct = 15 }
+      else { uncappedTotal += a.pct }
+    }
+    if (excess > 0 && uncappedTotal > 0) {
+      for (const a of allocations) {
+        if (a.pct < 15) a.pct += (a.pct / uncappedTotal) * excess
+      }
+    }
+  }
+
+  // Sort by allocation descending
+  allocations.sort((a, b) => b.pct - a.pct)
+  // Re-normalize to exactly 100
+  const sum = allocations.reduce((s, a) => s + a.pct, 0)
+  allocations = allocations.map((a) => ({ ...a, pct: (a.pct / sum) * 100 }))
+
+
+  return (
+    <div>
+      {allocations.map((a) => {
+        const side = a.action === 'BUY_YES' ? 'Buy Yes' : 'Buy No'
+        const prob = a.probability <= 1 ? Math.round(a.probability * 100) : Math.round(a.probability)
+
+        return (
+          <div key={a.id} className="flex items-center py-3 border-b border-black/[0.04]">
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] text-text-primary leading-snug">{a.title}</p>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                {a.ticker} · {side} at {prob}¢
+              </p>
+            </div>
+            <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+              <span className="text-[14px] font-medium text-text-primary tabular-nums">{a.pct.toFixed(1)}%</span>
+              {a.url && (
+                <a href={a.url} target="_blank" rel="noopener noreferrer"
+                  className="text-[11px] text-text-muted hover:text-text-primary transition-colors">
+                  Trade
+                </a>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function TradeCard({ market }: { market: import('../types').Market }) {
   const toggleMarketSelection = useStore((s) => s.toggleMarketSelection)
   const [tradeMode, setTradeMode] = useState<'buy' | 'sell'>('buy')
@@ -209,36 +368,37 @@ function TradeCard({ market }: { market: import('../types').Market }) {
   // Polymarket minimum price is 0.2¢ — use that floor for calculations to avoid division by zero
   const selectedPrice = Math.max(0.2, tradeSide === 'yes' ? priceYes : priceNo) / 100
 
+  const toWin = tradeMode === 'buy' ? tradeAmount / selectedPrice : tradeAmount * selectedPrice
+
   return (
-    <div className="card-static overflow-hidden">
-      {/* Header with dismiss */}
-      <div className="px-5 pt-4 pb-3 flex items-start justify-between gap-3">
+    <div className="rounded-2xl border border-[#E8E8E8] bg-white overflow-hidden">
+      {/* Title */}
+      <div className="px-5 pt-5 pb-2 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-bold text-text-primary leading-snug">{market.title}</p>
-          <p className="text-[11px] text-text-muted mt-1 font-medium">
-            {market.category} · <span className="tabular-nums">${(market.volume / 1_000_000).toFixed(1)}M</span> Vol.
+          <p className="text-[15px] font-semibold text-[#1A1A1A] leading-snug">{market.title}</p>
+          <p className="text-[12px] text-[#999] mt-1">
+            {market.category} · ${(market.volume / 1_000_000).toFixed(1)}M Vol.
           </p>
         </div>
         <button
           onClick={() => toggleMarketSelection(market)}
-          className="flex-shrink-0 p-1 rounded-lg text-text-muted hover:text-red hover:bg-red-bg transition-all bg-transparent border-none cursor-pointer"
-          aria-label="Remove"
+          className="flex-shrink-0 p-1 text-[#999] hover:text-[#333] transition-colors bg-transparent border-none cursor-pointer"
         >
           <X size={14} />
         </button>
       </div>
 
-      <div className="px-5 pb-5 space-y-4">
-        {/* Buy / Sell tabs */}
-        <div className="flex items-center border-b border-border">
+      <div className="px-5 pb-5">
+        {/* Buy / Sell */}
+        <div className="flex items-center gap-4 pt-3 pb-4 border-b border-[#F0F0F0]">
           {(['buy', 'sell'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setTradeMode(mode)}
-              className={`text-[14px] bg-transparent border-none cursor-pointer transition-all duration-200 mr-4 pb-2.5 capitalize ${
+              className={`text-[16px] bg-transparent border-none cursor-pointer capitalize pb-1 transition-colors ${
                 tradeMode === mode
-                  ? 'text-text-primary font-bold border-b-[3px] border-blue -mb-[1px]'
-                  : 'text-text-muted font-medium hover:text-text-secondary'
+                  ? 'text-[#1A1A1A] font-semibold'
+                  : 'text-[#B0B0B0] font-normal hover:text-[#666]'
               }`}
             >
               {mode}
@@ -246,35 +406,38 @@ function TradeCard({ market }: { market: import('../types').Market }) {
           ))}
         </div>
 
-        {/* Yes / No buttons */}
-        <div className="flex gap-2">
+        {/* Yes / No — rounded pill buttons like Polymarket */}
+        <div className="flex gap-3 pt-4 pb-5">
           {(['yes', 'no'] as const).map((side) => {
             const price = side === 'yes' ? priceYes : priceNo
+            const isActive = tradeSide === side
             return (
               <button
                 key={side}
                 onClick={() => setTradeSide(side)}
-                className={`btn-3d flex-1 py-3 rounded-xl text-[13px] font-bold cursor-pointer border-2 transition-all duration-150 capitalize ${
-                  tradeSide === side
-                    ? side === 'yes'
-                      ? 'bg-green-bg border-green text-green shadow-lg'
-                      : 'bg-red-bg border-red text-red shadow-lg'
-                    : 'bg-bg-input border-transparent text-text-muted hover:border-border-focus hover:text-text-secondary'
-                }`}
+                className="flex-1 py-3 rounded-lg text-[15px] font-semibold cursor-pointer border-none transition-all duration-100"
+                style={{
+                  background: isActive
+                    ? side === 'yes' ? '#34A853' : '#EA4335'
+                    : '#F2F2F2',
+                  color: isActive ? '#fff' : '#666',
+                }}
               >
-                {side} <span className="tabular-nums">{price}¢</span>
+                {side === 'yes' ? 'Yes' : 'No'} {price}¢
               </button>
             )
           })}
         </div>
 
         {/* Amount */}
-        <div>
-          <div className="flex items-baseline justify-between mb-3">
-            <span className="text-[13px] text-text-primary font-semibold">{tradeMode === 'buy' ? 'Amount' : 'Shares'}</span>
+        <div className="pb-4">
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <p className="text-[15px] text-[#1A1A1A] font-semibold">{tradeMode === 'buy' ? 'Amount' : 'Shares'}</p>
+            </div>
             <div className="flex items-baseline">
               {tradeMode === 'buy' && (
-                <span className={`text-[32px] font-extrabold tracking-tight leading-none transition-colors duration-200 ${tradeAmount > 0 ? 'text-text-primary' : 'text-border'}`}>$</span>
+                <span className={`text-[28px] font-bold tracking-tight leading-none ${tradeAmount > 0 ? 'text-[#1A1A1A]' : 'text-[#D0D0D0]'}`}>$</span>
               )}
               <input
                 type="number"
@@ -282,42 +445,45 @@ function TradeCard({ market }: { market: import('../types').Market }) {
                 value={tradeAmount || ''}
                 placeholder="0"
                 onChange={(e) => setTradeAmount(Math.max(0, Number(e.target.value) || 0))}
-                className="text-[32px] font-extrabold tracking-tight tabular-nums leading-none bg-transparent border-none outline-none w-[90px] text-right text-text-primary placeholder:text-border"
+                className="text-[28px] font-bold tracking-tight leading-none bg-transparent border-none outline-none w-[90px] text-right text-[#1A1A1A] placeholder:text-[#D0D0D0]"
                 style={{ MozAppearance: 'textfield' }}
               />
             </div>
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             {(tradeMode === 'buy' ? [1, 5, 10, 100] : [1, 5, 10, 50]).map((v) => (
               <button
                 key={v}
                 onClick={() => setTradeAmount((prev) => prev + v)}
-                className="btn-3d flex-1 text-[11px] font-semibold py-2 rounded-lg border border-border text-text-primary cursor-pointer bg-white hover:bg-bg-hover"
+                className="flex-1 text-[13px] font-medium py-2 rounded-lg border border-[#E0E0E0] text-[#333] cursor-pointer bg-white hover:bg-[#F8F8F8] transition-colors"
               >
                 {tradeMode === 'buy' ? `+$${v}` : `+${v}`}
               </button>
             ))}
             <button
               onClick={() => setTradeAmount(0)}
-              className="btn-3d text-[11px] font-semibold py-2 px-3 rounded-lg border border-border text-text-muted cursor-pointer bg-white hover:bg-bg-hover"
+              className="text-[13px] font-medium py-2 px-4 rounded-lg border border-[#E0E0E0] text-[#999] cursor-pointer bg-white hover:bg-[#F8F8F8] transition-colors"
             >
-              Clear
+              Max
             </button>
           </div>
         </div>
 
-        {/* Payout estimate */}
+        {/* Payout — separated by line like Polymarket */}
         {tradeAmount > 0 && (
-          <div className="bg-bg-page rounded-xl p-3 space-y-1.5">
-            <div className="flex justify-between text-[12px]">
-              <span className="text-text-muted">{tradeMode === 'buy' ? 'To win' : "You'll receive"}</span>
-              <span className="text-text-primary font-bold tabular-nums">
-                ${(tradeMode === 'buy' ? tradeAmount / selectedPrice : tradeAmount * selectedPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="flex justify-between text-[12px]">
-              <span className="text-text-muted">Avg. Price</span>
-              <span className="text-text-primary font-bold tabular-nums">{(selectedPrice * 100).toFixed(1)}¢</span>
+          <div className="border-t border-[#F0F0F0] pt-4 pb-2">
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-[15px] text-[#1A1A1A] font-semibold">
+                  {tradeMode === 'buy' ? 'To win' : "You'll receive"}
+                </p>
+                <p className="text-[12px] text-[#999] mt-0.5">
+                  Avg. Price {(selectedPrice * 100).toFixed(1)}¢
+                </p>
+              </div>
+              <p className="text-[28px] font-bold tracking-tight tabular-nums" style={{ color: tradeSide === 'yes' ? '#34A853' : '#EA4335' }}>
+                ${toWin.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
             </div>
           </div>
         )}
@@ -329,17 +495,13 @@ function TradeCard({ market }: { market: import('../types').Market }) {
             window.open(market.url, '_blank', 'noopener,noreferrer')
           }}
           disabled={!market.url || market.url === '#'}
-          className="btn-glow w-full text-white font-bold py-3.5 rounded-xl text-[14px] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-none transition-all duration-200"
+          className="w-full font-semibold py-3.5 rounded-lg text-[16px] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-none transition-colors duration-150 mt-3"
           style={{
-            background: tradeSide === 'yes'
-              ? 'linear-gradient(135deg, #10B981, #059669)'
-              : 'linear-gradient(135deg, #EF4444, #DC2626)',
-            boxShadow: tradeSide === 'yes'
-              ? '0 4px 0 0 #047857, 0 4px 20px rgba(16,185,129,0.3)'
-              : '0 4px 0 0 #B91C1C, 0 4px 20px rgba(239,68,68,0.3)',
+            background: tradeSide === 'yes' ? '#34A853' : '#EA4335',
+            color: '#fff',
           }}
         >
-          {tradeMode === 'buy' ? 'Buy' : 'Sell'} {tradeSide.toUpperCase()} on Polymarket
+          {tradeMode === 'buy' ? 'Buy' : 'Sell'} {tradeSide === 'yes' ? 'Yes' : 'No'}
         </button>
       </div>
     </div>

@@ -148,20 +148,34 @@ function scoreMarketRelevance(raw, keyword) {
   const titleHasSubstring = !titleHasWord && title.includes(kw);
   const slugHasSubstring = !slugHasSegment && slug.includes(kw);
 
+  // Short keywords (<=3 chars) are too ambiguous for substring matching
+  // e.g. "ast" matches "masters", "aal" matches "football"
+  const minSubLen = 5;
+
   if (titleHasWord) score += 40;
-  else if (titleHasSubstring && kw.length >= 3) score += 15;
+  else if (titleHasSubstring && kw.length >= minSubLen) score += 15;
 
   if (slugHasSegment) score += 30;
-  else if (slugHasSubstring && kw.length >= 3) score += 10;
+  else if (slugHasSubstring && kw.length >= minSubLen) score += 10;
 
   // Description matching (weaker signal but catches more results)
   if (score === 0) {
     if (matchesWholeWord(desc, kw)) score += 12;
-    else if (desc.includes(kw) && kw.length >= 3) score += 5;
+    else if (desc.includes(kw) && kw.length >= minSubLen) score += 5;
   }
 
   // No text match at all → irrelevant
   if (score === 0) return 0;
+
+  // Penalize dead markets (probability <= 2% or >= 98% with near expiry)
+  const prob = parseProbability(raw);
+  const endStr = raw.endDate || raw.endDateIso;
+  if (prob != null && endStr) {
+    const daysLeft = Math.max(0, (new Date(endStr).getTime() - Date.now()) / 86400000);
+    if (daysLeft < 7 && (prob <= 2 || prob >= 98)) {
+      score -= 20;
+    }
+  }
 
   // ── Tiebreakers ──
   const vol = safeNumber(raw.volumeNum ?? raw.volume, 0);

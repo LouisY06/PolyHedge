@@ -78,4 +78,35 @@ async function getChart(ticker, { range = "5d", interval = "15m" } = {}) {
   return { ticker: result.meta.symbol, previousClose: result.meta.chartPreviousClose ?? null, points };
 }
 
-module.exports = { getQuotes, getQuote, getChart };
+/**
+ * Fetch company profile (sector, industry, description) via quoteSummary.
+ * Returns { sector, industry, description } or null.
+ */
+async function getCompanyProfile(ticker) {
+  try {
+    const response = await axios.get(
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${ticker.toUpperCase()}`,
+      {
+        params: { modules: "assetProfile,summaryProfile" },
+        headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" },
+        timeout: 10000,
+      }
+    );
+
+    const profile =
+      response.data?.quoteSummary?.result?.[0]?.assetProfile ||
+      response.data?.quoteSummary?.result?.[0]?.summaryProfile;
+
+    if (!profile) return null;
+
+    return {
+      sector: profile.sector || null,
+      industry: profile.industry || null,
+      description: profile.longBusinessSummary || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+module.exports = { getQuotes, getQuote, getChart, getCompanyProfile };

@@ -11,6 +11,7 @@ interface AppState {
   activeCategory: string
   activeSort: string
   analysis: AnalysisResult | null
+  analysisCache: Record<string, AnalysisResult>
   analysisLoading: boolean
   analysisError: string | null
   gmailPreviewPositions: Position[]
@@ -25,6 +26,7 @@ interface AppState {
   setActiveCategory: (c: string) => void
   setActiveSort: (s: string) => void
   setAnalysis: (a: AnalysisResult | null) => void
+  setAnalysisCache: (cache: Record<string, AnalysisResult>) => void
   setAnalysisLoading: (v: boolean) => void
   setAnalysisError: (e: string | null) => void
   setGmailPreviewPositions: (p: Position[]) => void
@@ -42,6 +44,7 @@ export const useStore = create<AppState>()(
       activeCategory: 'All',
       activeSort: 'Trending',
       analysis: null,
+      analysisCache: {},
       analysisLoading: false,
       analysisError: null,
       gmailPreviewPositions: [],
@@ -65,6 +68,7 @@ export const useStore = create<AppState>()(
       setActiveCategory: (c) => set({ activeCategory: c }),
       setActiveSort: (s) => set({ activeSort: s }),
       setAnalysis: (a) => set({ analysis: a }),
+      setAnalysisCache: (cache) => set({ analysisCache: cache }),
       setAnalysisLoading: (v) => set({ analysisLoading: v }),
       setAnalysisError: (e) => set({ analysisError: e }),
       setGmailPreviewPositions: (p) => set({ gmailPreviewPositions: p }),
@@ -75,8 +79,10 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         isLoggedIn: state.isLoggedIn,
         positions: state.positions,
+        markets: state.markets,
         bundles: state.bundles,
         analysis: state.analysis,
+        analysisCache: state.analysisCache,
       }),
     }
   )
