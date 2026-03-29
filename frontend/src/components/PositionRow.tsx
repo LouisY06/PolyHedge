@@ -16,6 +16,7 @@ export default function PositionRow({ position, markets }: Props) {
   const toggleMarketSelection = useStore((s) => s.toggleMarketSelection)
 
   const [chartPoints, setChartPoints] = useState<ChartPoint[] | null>(null)
+  const [sparkHover, setSparkHover] = useState(false)
 
   useEffect(() => {
     fetchChart(position.ticker).then((d) => {
@@ -24,65 +25,49 @@ export default function PositionRow({ position, markets }: Props) {
   }, [position.ticker])
 
   return (
-    <div className="card overflow-visible">
-      {/* Stock header */}
+    <div className={`bg-white rounded-2xl border border-black/[0.06] overflow-visible relative ${sparkHover ? 'z-30' : ''}`}>
+      {/* Stock header — fixed-width columns for alignment */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-bg-hover transition-all duration-200 bg-transparent border-none text-left group"
+        className="w-full flex items-center px-5 py-5 cursor-pointer hover:bg-bg-hover transition-all duration-200 bg-transparent border-none text-left group overflow-visible"
         aria-expanded={expanded}
       >
-        <div className="flex items-center gap-3.5 flex-shrink-0">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-[13px] text-white" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
-            {position.ticker.slice(0, 2)}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-text-primary text-[15px]">
-                {position.ticker}
-              </span>
-              <span className="text-text-muted text-[12px] hidden sm:inline font-medium">
-                {position.name}
-              </span>
-            </div>
-            <p className="text-text-muted text-[12px] mt-0.5">
-              {position.shares} share{position.shares !== 1 ? 's' : ''}
-            </p>
-          </div>
+        {/* Left: ticker info — fixed width so sparklines align */}
+        <div className="w-[120px] flex-shrink-0">
+          <span className="font-bold text-text-primary text-[15px] block">
+            {position.ticker}
+          </span>
+          <span className="text-text-muted text-[12px] block truncate">
+            {position.shares} share{position.shares !== 1 ? 's' : ''}
+          </span>
         </div>
 
-        {/* Sparkline */}
-        <div className="flex-1 mx-5 hidden sm:block" onClick={(e) => e.stopPropagation()}>
+        {/* Center: sparkline — fills remaining space equally for all rows */}
+        <div className="flex-1 mx-4 hidden sm:block overflow-visible" onClick={(e) => e.stopPropagation()}>
           {chartPoints ? (
-            <Sparkline points={chartPoints} positive={isPositive} />
+            <Sparkline points={chartPoints} positive={isPositive} onHoverChange={setSparkHover} />
           ) : (
             <div className="h-[48px] flex items-center">
-              <div className={`h-[2px] w-full rounded-full ${isPositive ? 'bg-green/20' : 'bg-red/20'}`} />
+              <div className={`h-[1.5px] w-full rounded-full ${isPositive ? 'bg-green/20' : 'bg-red/20'}`} />
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-5 flex-shrink-0">
-          <div className="text-right">
-            <p className="text-text-primary font-bold text-[16px] tabular-nums">
-              ${position.currentPrice.toFixed(2)}
-            </p>
-            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums mt-0.5 ${
-              isPositive ? 'text-green bg-green-bg' : 'text-red bg-red-bg'
-            }`}>
-              {isPositive ? <TrendingUpMini /> : <TrendingDownMini />}
-              {isPositive ? '+' : ''}{position.gainLossPercent.toFixed(2)}%
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {markets.length > 0 && (
-              <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full tabular-nums" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
-                {markets.length}
-              </span>
-            )}
-            <div className={`text-text-muted transition-transform duration-300 ease-out ${expanded ? 'rotate-180' : ''} group-hover:text-text-secondary`}>
-              <ChevronDown size={18} />
-            </div>
-          </div>
+        {/* Right: price + change — fixed width */}
+        <div className="w-[130px] flex-shrink-0 text-right">
+          <p className="text-text-primary font-bold text-[15px] tabular-nums">
+            ${position.currentPrice.toFixed(2)}
+          </p>
+          <p className={`text-[12px] font-semibold tabular-nums mt-0.5 ${
+            isPositive ? 'text-green' : 'text-red'
+          }`}>
+            {isPositive ? '+' : ''}{position.gainLossPercent.toFixed(2)}%
+          </p>
+        </div>
+
+        {/* Chevron */}
+        <div className={`ml-3 text-text-muted transition-transform duration-300 ease-out flex-shrink-0 ${expanded ? 'rotate-180' : ''} group-hover:text-text-secondary`}>
+          <ChevronDown size={16} />
         </div>
       </button>
 
@@ -90,10 +75,11 @@ export default function PositionRow({ position, markets }: Props) {
       {expanded && (
         <div className="border-t border-border animate-slide-down">
           {/* Position stats */}
-          <div className="px-5 py-3 flex gap-6 text-xs">
+          <div className="px-5 py-3 flex gap-8 text-xs border-b border-border">
             <Stat label="Market Value" value={`$${position.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-            <Stat label="Avg Cost" value={`$${position.avgCost.toFixed(2)}`} />
+            <Stat label="Your Avg Cost" value={`$${position.avgCost.toFixed(2)}`} />
             <Stat label="Total Return" value={`${isPositive ? '+' : ''}$${position.gainLoss.toFixed(2)}`} color={isPositive ? 'text-green' : 'text-red'} />
+            <Stat label="Shares" value={String(position.shares)} />
           </div>
 
           {markets.length === 0 ? (
@@ -122,14 +108,13 @@ export default function PositionRow({ position, markets }: Props) {
                     }}
                   >
                     <div
-                      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                        isSelected ? 'border-blue scale-110' : 'border-border hover:border-text-muted'
+                      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-150 ${
+                        isSelected ? 'bg-blue border-blue' : 'border-text-muted/30 hover:border-text-muted'
                       }`}
-                      style={isSelected ? { background: 'linear-gradient(135deg, #3B82F6, #2563EB)' } : {}}
                     >
                       {isSelected && (
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                     </div>
@@ -140,15 +125,10 @@ export default function PositionRow({ position, markets }: Props) {
                         <span className="text-[11px] text-text-muted tabular-nums font-medium">${(market.volume / 1_000_000).toFixed(1)}M vol</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="btn-3d btn-3d-green flex flex-col items-center justify-center w-[56px] h-[44px] rounded-xl cursor-pointer" style={{ background: 'linear-gradient(180deg, #F0FDF4, #DCFCE7)' }}>
-                        <span className="text-green text-[14px] font-extrabold leading-none tabular-nums">{market.confidence}¢</span>
-                        <span className="text-green/60 text-[9px] font-bold mt-0.5 uppercase tracking-wider">Yes</span>
-                      </div>
-                      <div className="btn-3d btn-3d-red flex flex-col items-center justify-center w-[56px] h-[44px] rounded-xl cursor-pointer" style={{ background: 'linear-gradient(180deg, #FEF2F2, #FEE2E2)' }}>
-                        <span className="text-red text-[14px] font-extrabold leading-none tabular-nums">{100 - market.confidence}¢</span>
-                        <span className="text-red/60 text-[9px] font-bold mt-0.5 uppercase tracking-wider">No</span>
-                      </div>
+                    <div className="flex-shrink-0 text-right tabular-nums">
+                      <span className="text-green text-[13px] font-bold">{market.confidence}¢</span>
+                      <span className="text-text-muted text-[11px] mx-1">/</span>
+                      <span className="text-red text-[13px] font-bold">{100 - market.confidence}¢</span>
                     </div>
                   </div>
                 )
@@ -170,27 +150,9 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
   )
 }
 
-function TrendingUpMini() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <path d="M1 7L4 4L6 6L9 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6 3H9V6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function TrendingDownMini() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-      <path d="M1 3L4 6L6 4L9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6 7H9V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
 // ── Sparkline with Robinhood-style hover ─────
 
-function Sparkline({ points, positive }: { points: ChartPoint[]; positive: boolean }) {
+function Sparkline({ points, positive, onHoverChange }: { points: ChartPoint[]; positive: boolean; onHoverChange?: (hovering: boolean) => void }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<{ pct: number; price: number; time: number; y: number } | null>(null)
   const color = positive ? '#10B981' : '#EF4444'
@@ -219,8 +181,8 @@ function Sparkline({ points, positive }: { points: ChartPoint[]; positive: boole
   }, [points, min, range])
 
   return (
-    <div ref={containerRef} className="relative cursor-crosshair" style={{ height: H }}
-      onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+    <div ref={containerRef} className="relative cursor-crosshair" style={{ height: H, overflow: 'visible' }}
+      onMouseMove={onMove} onMouseEnter={() => onHoverChange?.(true)} onMouseLeave={() => { setHover(null); onHoverChange?.(false) }}>
       <svg viewBox={`0 0 100 ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
         <path d={svgPath} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
       </svg>
@@ -240,7 +202,7 @@ function Sparkline({ points, positive }: { points: ChartPoint[]; positive: boole
               transform: 'translate(-50%, -50%)',
             }} />
           {/* Tooltip */}
-          <div className="absolute px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap pointer-events-none z-10"
+          <div className="absolute px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap pointer-events-none z-50"
             style={{
               left: `${Math.max(10, Math.min(90, hover.pct))}%`,
               top: H + 6,
