@@ -6,7 +6,7 @@
 
 Hedge your stock portfolio using Polymarket prediction markets. Upload your holdings, get AI-powered analysis of relevant markets, and build a diversified prediction market index tailored to your positions.
 
-The interface is modeled after Robinhood — the idea is that if you're already comfortable trading stocks there, prediction markets should feel just as familiar. Lower the barrier to entry for a new asset class.
+The interface is modeled after Robinhood; the idea is that if you're already comfortable trading stocks there, prediction markets should feel just as familiar. Lower the barrier to entry for a new asset class.
 
 ### Portfolio Analysis & Trading
 AI identifies themes across your holdings and surfaces relevant prediction markets. Trade directly through a Polymarket-style interface.
