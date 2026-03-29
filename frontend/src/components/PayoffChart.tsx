@@ -94,7 +94,9 @@ export default function PayoffChart({ probability, amount, side, mode }: Props) 
     if (!el) return
     const rect = el.getBoundingClientRect()
     const rawX = e.clientX - rect.left
-    const prob01 = Math.max(0, Math.min(1, (rawX - padL) / chartW))
+    const rawProb = Math.max(0, Math.min(1, (rawX - padL) / chartW))
+    // Snap to nearest whole percent so tooltip values are clean
+    const prob01 = Math.round(rawProb * 100) / 100
     const pnl = pnlAtProb(prob01)
     setHover({ x: rawX, prob: prob01 * 100, pnl })
   }, [amount, probability, side, mode])
