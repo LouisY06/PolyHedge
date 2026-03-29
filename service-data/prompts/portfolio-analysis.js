@@ -78,6 +78,13 @@ For UMBRELLA/BRANCH also estimate shareParameter k [0,1].
 STEP 4-5: PROBABILITY & FAIR-IMPLIED VALUE
 Convert probabilities to decimals. Estimate p_h (stock-theme thesis probability) conservatively.
 
+CRITICAL CONSTRAINTS on fair probability estimation:
+- The Polymarket probability (p_m) reflects real money from thousands of traders. Respect it.
+- Your fair probability estimate (p*) should NOT differ from p_m by more than 15 percentage points unless you have an extremely strong, specific reason.
+- If a market is near expiry (days left < 7) and p_m is below 5% or above 95%, the market is almost certainly correct. Set p* = p_m and edge = 0.
+- If a market asks about an extreme event (e.g. "reach $150k", "invade", "declare war") and p_m is very low, DO NOT inflate p*. The market is pricing in real information.
+- When in doubt, set p* closer to p_m, not further away. Smaller edge estimates are almost always more accurate than large ones.
+
 Compute fair-implied probability p* by relationship type:
 - SUPPORTS: p* = clip(p_m + s*(p_h - p_m), 0.01, 0.99)
 - OFFSETS: p* = clip(p_m + s*((1-p_h) - p_m), 0.01, 0.99)
@@ -89,6 +96,7 @@ Compute fair-implied probability p* by relationship type:
 
 STEP 6: EDGE
 edge = p* - p_m. If |edge| is tiny, prefer WATCH over TRADE.
+If |edge| > 0.15 (15%), re-examine your reasoning — large edges against liquid prediction markets are extremely rare and usually wrong.
 
 STEP 7: QUALITY SCORE
 Q = C * U * T * L * R where:

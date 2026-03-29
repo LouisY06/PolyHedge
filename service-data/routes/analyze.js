@@ -120,6 +120,9 @@ async function gatherCandidates(holdings) {
         if (result.status !== "fulfilled") continue;
         for (const market of result.value) {
           if (!seen.has(market.id)) {
+            const daysLeft = market.endDate
+              ? Math.max(0, Math.ceil((new Date(market.endDate).getTime() - Date.now()) / 86400000))
+              : null;
             seen.set(market.id, {
               marketId: market.id,
               title: market.title,
@@ -127,6 +130,7 @@ async function gatherCandidates(holdings) {
               volume: Math.round(market.volume),
               liquidity: Math.round(market.liquidity),
               endDate: market.endDate,
+              daysLeft,
               url: market.url,
             });
           }

@@ -83,68 +83,44 @@ export async function analyzePortfolio(
   return res.json()
 }
 
-// ── Markets (real Polymarket API) ──────────────────────
+// ── Mock data (markets/bundles) ────────────────────────
 
 export async function fetchPositions(): Promise<Position[]> { return [] }
 
-/**
- * Fetch real Polymarket markets relevant to the user's positions.
- * Calls POST /markets/for-positions which searches by ticker keywords
- * and returns markets with relatedTickers populated.
- */
-export async function fetchMarketsForPositions(positions: Position[]): Promise<Market[]> {
+export async function fetchAllMarkets(positions: Position[]): Promise<Market[]> {
   if (positions.length === 0) return []
-
-  const tickers = positions.map((p) => p.ticker)
+  const totalValue = positions.reduce((s, p) => s + (p.marketValue || p.shares * p.avgCost), 0)
+  const holdings = positions.map((p) => {
+    const value = p.marketValue || p.shares * p.avgCost
+    return { ticker: p.ticker, companyName: p.name, weight: totalValue > 0 ? Math.round((value / totalValue) * 100) : 0 }
+  })
   try {
-    const res = await fetch(`${API_BASE}/markets/for-positions`, {
+    const res = await fetch(`${API_BASE}/portfolio-markets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tickers, limit: 5 }),
+      body: JSON.stringify({ holdings }),
     })
     if (!res.ok) return []
     const data = await res.json()
-    return data.markets as Market[]
+    // Map backend suggestions to frontend Market type
+    return (data.marketSuggestions || []).map((s: Record<string, unknown>) => {
+      const m = s.market as Record<string, unknown>
+      const prob = typeof m.probability === 'number' ? m.probability : 50
+      return {
+        id: m.id as string,
+        title: m.title as string,
+        image: '',
+        confidence: Math.round(prob),
+        volume: (m.volume as number) || 0,
+        endDate: (m.endDate as string) || new Date(Date.now() + 90 * 86400000).toISOString(),
+        category: (s.keywordMatched as string) || 'Market',
+        url: (m.url as string) || '#',
+        relatedTickers: [s.ticker as string],
+      } satisfies Market
+    })
   } catch {
     return []
   }
-}
-
-/**
- * Browse/search all active Polymarket markets.
- * No query → top by volume.
- */
-export async function searchMarkets(query?: string): Promise<Market[]> {
-  try {
-    const params = new URLSearchParams()
-    if (query) params.set('q', query)
-    params.set('limit', '50')
-    const res = await fetch(`${API_BASE}/markets/browse?${params}`)
-    if (!res.ok) return []
-    const data = await res.json()
-    // browseMarkets returns Polymarket-normalized shape, convert to frontend Market
-    return (data.markets as Array<{
-      id: string; title: string; image?: string; probability?: number;
-      volume?: number; endDate?: string; url?: string;
-    }>).map((m) => ({
-      id: m.id,
-      title: m.title,
-      image: m.image || '',
-      confidence: m.probability ?? 50,
-      volume: m.volume || 0,
-      endDate: m.endDate || '',
-      category: 'Other',
-      url: m.url || '#',
-      relatedTickers: [],
-    }))
-  } catch {
-    return []
-  }
-}
-
-/** @deprecated Use fetchMarketsForPositions instead */
-export async function fetchAllMarkets(): Promise<Market[]> {
-  return searchMarkets()
 }
 
 export async function fetchBundleSummary(_stocks: Position[], _markets: Market[]): Promise<BundleSummary> { await delay(1200); return mockBundleSummary }

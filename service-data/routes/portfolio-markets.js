@@ -1,7 +1,7 @@
 const { searchMarketsByKeyword, scoreMarketRelevance } = require("../polymarket");
 const { resolveKeywordsForHolding } = require("../ticker-keywords");
 
-const MARKETS_PER_HOLDING = 3;
+const MARKETS_PER_HOLDING = 5;
 
 // ── Input validation ─────────────────────────────────────
 
@@ -42,7 +42,7 @@ async function getMarketsForHolding(holding) {
   const searchResults = await Promise.allSettled(
     keywords.map(async (kw) => {
       // Fetch more than we need so ranking has a pool to work with
-      const markets = await searchMarketsByKeyword(kw, { limit: 5 });
+      const markets = await searchMarketsByKeyword(kw, { limit: 10 });
       return markets.map((m) => ({ market: m, keyword: kw }));
     })
   );
