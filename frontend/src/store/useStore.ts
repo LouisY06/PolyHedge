@@ -13,6 +13,7 @@ interface AppState {
   analysis: AnalysisResult | null
   analysisLoading: boolean
   analysisError: string | null
+  gmailPreviewPositions: Position[]
 
   setLoggedIn: (v: boolean) => void
   setPositions: (p: Position[]) => void
@@ -26,6 +27,8 @@ interface AppState {
   setAnalysis: (a: AnalysisResult | null) => void
   setAnalysisLoading: (v: boolean) => void
   setAnalysisError: (e: string | null) => void
+  setGmailPreviewPositions: (p: Position[]) => void
+  clearGmailPreview: () => void
 }
 
 export const useStore = create<AppState>()(
@@ -41,6 +44,7 @@ export const useStore = create<AppState>()(
       analysis: null,
       analysisLoading: false,
       analysisError: null,
+      gmailPreviewPositions: [],
 
       setLoggedIn: (v) => set({ isLoggedIn: v }),
       setPositions: (p) => set({ positions: p }),
@@ -63,6 +67,8 @@ export const useStore = create<AppState>()(
       setAnalysis: (a) => set({ analysis: a }),
       setAnalysisLoading: (v) => set({ analysisLoading: v }),
       setAnalysisError: (e) => set({ analysisError: e }),
+      setGmailPreviewPositions: (p) => set({ gmailPreviewPositions: p }),
+      clearGmailPreview: () => set({ gmailPreviewPositions: [] }),
     }),
     {
       name: 'polyhedge-storage',
