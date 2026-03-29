@@ -332,11 +332,13 @@ function IndexView({ analysisCache }: {
     <div>
       <p className="text-[11px] text-text-muted mb-3">Suggested allocation across {allocations.length} markets. Prices from Polymarket, targets estimated by AI.</p>
       {allocations.map((a) => {
-        const side = a.action === 'BUY_YES' ? 'Yes' : 'No'
-        const marketPrice = a.probability <= 1 ? Math.round(a.probability * 100) : Math.round(a.probability)
-        const targetPrice = a.fairProbability != null
-          ? (a.fairProbability <= 1 ? Math.round(a.fairProbability * 100) : Math.round(a.fairProbability))
-          : null
+        const isYes = a.action === 'BUY_YES'
+        const side = isYes ? 'Yes' : 'No'
+        const rawProb = a.probability <= 1 ? a.probability * 100 : a.probability
+        const rawFair = a.fairProbability != null ? (a.fairProbability <= 1 ? a.fairProbability * 100 : a.fairProbability) : null
+        // For BUY_NO, show the No side prices (flipped)
+        const marketPrice = Math.round(isYes ? rawProb : 100 - rawProb)
+        const targetPrice = rawFair != null ? Math.round(isYes ? rawFair : 100 - rawFair) : null
 
         return (
           <div key={a.id} className="py-3 border-b border-black/[0.04]">
@@ -347,7 +349,7 @@ function IndexView({ analysisCache }: {
             <div className="flex items-center justify-between mt-1">
               <div className="flex items-center gap-3 text-[11px] text-text-muted">
                 <span>{a.ticker}</span>
-                <span>{side} {marketPrice}¢{targetPrice != null && (<> → <span className={targetPrice > marketPrice ? 'text-green' : 'text-red'}>{targetPrice}¢</span></>)}</span>
+                <span>{side} {marketPrice}¢{targetPrice != null && targetPrice !== marketPrice && (<> → <span className={targetPrice > marketPrice ? 'text-green' : 'text-red'}>{targetPrice}¢</span></>)}</span>
               </div>
               {a.url && (
                 <a href={a.url} target="_blank" rel="noopener noreferrer"
