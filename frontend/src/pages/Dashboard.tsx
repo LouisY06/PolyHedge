@@ -21,6 +21,7 @@ export default function Dashboard() {
   const setAnalysis = useStore((s) => s.setAnalysis)
   const analysisCache = useStore((s) => s.analysisCache)
   const setAnalysisCache = useStore((s) => s.setAnalysisCache)
+  const clearAnalysisCache = useStore((s) => s.clearAnalysisCache)
   const setAnalysisLoading = useStore((s) => s.setAnalysisLoading)
   const setAnalysisError = useStore((s) => s.setAnalysisError)
 
@@ -59,18 +60,17 @@ export default function Dashboard() {
 
   const runAnalysisBg = async (obj: string) => {
     if (positions.length === 0 || pendingObjectives.current.has(obj)) return
-    if (analysisCache[obj]) return // already cached
+    if (analysisCache[obj]) return
     pendingObjectives.current.add(obj)
     try {
       const result = await analyzePortfolio(positions, { objective: obj, beginnerMode: true })
-      setAnalysisCache({ ...analysisCache, [obj]: result })
+      setAnalysisCache(obj, result)
     } catch { /* background — no UI error */ }
     finally { pendingObjectives.current.delete(obj) }
   }
 
   const runAnalysis = async (obj?: string) => {
     const target = obj || objective
-    // If cached, just display it
     if (analysisCache[target]) {
       setAnalysis(analysisCache[target])
       return
@@ -79,7 +79,7 @@ export default function Dashboard() {
     setAnalysisLoading(true); setAnalysisError(null)
     try {
       const result = await analyzePortfolio(positions, { objective: target, beginnerMode: true })
-      setAnalysisCache({ ...analysisCache, [target]: result })
+      setAnalysisCache(target, result)
       setAnalysis(result)
     }
     catch (err: unknown) { setAnalysisError(err instanceof Error ? err.message : 'Analysis failed') }
@@ -102,7 +102,7 @@ export default function Dashboard() {
             PolyHedge
           </span>
           <button
-            onClick={() => { setLoggedIn(false); setAnalysis(null); setAnalysisCache({}); setMarkets([]) }}
+            onClick={() => { setLoggedIn(false); setAnalysis(null); clearAnalysisCache(); setMarkets([]) }}
             className="flex items-center gap-1.5 text-[13px] text-text-muted hover:text-text-primary bg-transparent border-none cursor-pointer transition-colors duration-150"
             aria-label="Log out"
           >
@@ -329,20 +329,25 @@ function IndexView({ analysisCache }: {
 
   return (
     <div>
+      <p className="text-[11px] text-text-muted mb-3">Suggested allocation across {allocations.length} markets. Prices from Polymarket, targets estimated by AI.</p>
       {allocations.map((a) => {
-        const side = a.action === 'BUY_YES' ? 'Buy Yes' : 'Buy No'
-        const prob = a.probability <= 1 ? Math.round(a.probability * 100) : Math.round(a.probability)
+        const side = a.action === 'BUY_YES' ? 'Yes' : 'No'
+        const marketPrice = a.probability <= 1 ? Math.round(a.probability * 100) : Math.round(a.probability)
+        const targetPrice = a.fairProbability != null
+          ? (a.fairProbability <= 1 ? Math.round(a.fairProbability * 100) : Math.round(a.fairProbability))
+          : null
 
         return (
-          <div key={a.id} className="flex items-center py-3 border-b border-black/[0.04]">
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] text-text-primary leading-snug">{a.title}</p>
-              <p className="text-[11px] text-text-muted mt-0.5">
-                {a.ticker} · {side} at {prob}¢
-              </p>
+          <div key={a.id} className="py-3 border-b border-black/[0.04]">
+            <div className="flex items-center justify-between">
+              <p className="text-[13px] text-text-primary leading-snug flex-1 min-w-0 mr-3">{a.title}</p>
+              <span className="text-[15px] font-medium text-text-primary tabular-nums flex-shrink-0">{a.pct.toFixed(1)}%</span>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-              <span className="text-[14px] font-medium text-text-primary tabular-nums">{a.pct.toFixed(1)}%</span>
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center gap-3 text-[11px] text-text-muted">
+                <span>{a.ticker}</span>
+                <span>{side} {marketPrice}¢{targetPrice != null && (<> → <span className={targetPrice > marketPrice ? 'text-green' : 'text-red'}>{targetPrice}¢</span></>)}</span>
+              </div>
               {a.url && (
                 <a href={a.url} target="_blank" rel="noopener noreferrer"
                   className="text-[11px] text-text-muted hover:text-text-primary transition-colors">
@@ -371,31 +376,31 @@ function TradeCard({ market }: { market: import('../types').Market }) {
   const toWin = tradeMode === 'buy' ? tradeAmount / selectedPrice : tradeAmount * selectedPrice
 
   return (
-    <div className="rounded-2xl border border-[#E8E8E8] bg-white overflow-hidden">
+    <div className="rounded-2xl border border-[#E8E8E8] bg-white overflow-hidden" style={{ boxShadow: '-2px 2px 8px rgba(0,0,0,0.06), 0 0 1px rgba(0,0,0,0.08)' }}>
       {/* Title */}
-      <div className="px-5 pt-5 pb-2 flex items-start justify-between gap-3">
+      <div className="px-4 pt-3 pb-1 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold text-[#1A1A1A] leading-snug">{market.title}</p>
-          <p className="text-[12px] text-[#999] mt-1">
+          <p className="text-[13px] font-semibold text-[#1A1A1A] leading-snug">{market.title}</p>
+          <p className="text-[11px] text-[#999] mt-0.5">
             {market.category} · ${(market.volume / 1_000_000).toFixed(1)}M Vol.
           </p>
         </div>
         <button
           onClick={() => toggleMarketSelection(market)}
-          className="flex-shrink-0 p-1 text-[#999] hover:text-[#333] transition-colors bg-transparent border-none cursor-pointer"
+          className="flex-shrink-0 p-0.5 text-[#999] hover:text-[#333] transition-colors bg-transparent border-none cursor-pointer"
         >
-          <X size={14} />
+          <X size={12} />
         </button>
       </div>
 
-      <div className="px-5 pb-5">
+      <div className="px-4 pb-4">
         {/* Buy / Sell */}
-        <div className="flex items-center gap-4 pt-3 pb-4 border-b border-[#F0F0F0]">
+        <div className="flex items-center gap-3 pt-2 pb-2 border-b border-[#F0F0F0]">
           {(['buy', 'sell'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setTradeMode(mode)}
-              className={`text-[16px] bg-transparent border-none cursor-pointer capitalize pb-1 transition-colors ${
+              className={`text-[14px] bg-transparent border-none cursor-pointer capitalize transition-colors ${
                 tradeMode === mode
                   ? 'text-[#1A1A1A] font-semibold'
                   : 'text-[#B0B0B0] font-normal hover:text-[#666]'
@@ -406,8 +411,8 @@ function TradeCard({ market }: { market: import('../types').Market }) {
           ))}
         </div>
 
-        {/* Yes / No — rounded pill buttons like Polymarket */}
-        <div className="flex gap-3 pt-4 pb-5">
+        {/* Yes / No */}
+        <div className="flex gap-2 pt-3 pb-3">
           {(['yes', 'no'] as const).map((side) => {
             const price = side === 'yes' ? priceYes : priceNo
             const isActive = tradeSide === side
@@ -415,7 +420,7 @@ function TradeCard({ market }: { market: import('../types').Market }) {
               <button
                 key={side}
                 onClick={() => setTradeSide(side)}
-                className="flex-1 py-3 rounded-lg text-[15px] font-semibold cursor-pointer border-none transition-all duration-100"
+                className="flex-1 py-2 rounded-lg text-[13px] font-semibold cursor-pointer border-none transition-all duration-100"
                 style={{
                   background: isActive
                     ? side === 'yes' ? '#34A853' : '#EA4335'
@@ -430,58 +435,56 @@ function TradeCard({ market }: { market: import('../types').Market }) {
         </div>
 
         {/* Amount */}
-        <div className="pb-4">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <p className="text-[15px] text-[#1A1A1A] font-semibold">{tradeMode === 'buy' ? 'Amount' : 'Shares'}</p>
-            </div>
+        <div className="pb-3">
+          <div className="flex items-end justify-between mb-2">
+            <p className="text-[13px] text-[#1A1A1A] font-semibold">{tradeMode === 'buy' ? 'Amount' : 'Shares'}</p>
             <div className="flex items-baseline">
               {tradeMode === 'buy' && (
-                <span className={`text-[28px] font-bold tracking-tight leading-none ${tradeAmount > 0 ? 'text-[#1A1A1A]' : 'text-[#D0D0D0]'}`}>$</span>
+                <span className={`text-[28px] font-semibold tracking-tight leading-none ${tradeAmount > 0 ? 'text-[#1A1A1A]' : 'text-[#D0D0D0]'}`}>$</span>
               )}
               <input
                 type="number"
                 min={0}
                 value={tradeAmount || ''}
                 placeholder="0"
+                autoFocus
                 onChange={(e) => setTradeAmount(Math.max(0, Number(e.target.value) || 0))}
-                className="text-[28px] font-bold tracking-tight leading-none bg-transparent border-none outline-none w-[90px] text-right text-[#1A1A1A] placeholder:text-[#D0D0D0]"
-                style={{ MozAppearance: 'textfield' }}
+                className="text-[28px] font-semibold tracking-tight leading-none bg-transparent border-none outline-none w-[100px] text-right text-[#1A1A1A] placeholder:text-[#D0D0D0] caret-[#1A1A1A]"
               />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             {(tradeMode === 'buy' ? [1, 5, 10, 100] : [1, 5, 10, 50]).map((v) => (
               <button
                 key={v}
                 onClick={() => setTradeAmount((prev) => prev + v)}
-                className="flex-1 text-[13px] font-medium py-2 rounded-lg border border-[#E0E0E0] text-[#333] cursor-pointer bg-white hover:bg-[#F8F8F8] transition-colors"
+                className="flex-1 text-[12px] font-medium py-1.5 rounded-lg border border-[#E0E0E0] text-[#333] cursor-pointer bg-white hover:bg-[#F8F8F8] transition-colors"
               >
                 {tradeMode === 'buy' ? `+$${v}` : `+${v}`}
               </button>
             ))}
             <button
               onClick={() => setTradeAmount(0)}
-              className="text-[13px] font-medium py-2 px-4 rounded-lg border border-[#E0E0E0] text-[#999] cursor-pointer bg-white hover:bg-[#F8F8F8] transition-colors"
+              className="text-[12px] font-medium py-1.5 px-3 rounded-lg border border-[#E0E0E0] text-[#999] cursor-pointer bg-white hover:bg-[#F8F8F8] transition-colors"
             >
               Max
             </button>
           </div>
         </div>
 
-        {/* Payout — separated by line like Polymarket */}
+        {/* Payout */}
         {tradeAmount > 0 && (
-          <div className="border-t border-[#F0F0F0] pt-4 pb-2">
+          <div className="border-t border-[#F0F0F0] pt-3 pb-1">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-[15px] text-[#1A1A1A] font-semibold">
+                <p className="text-[13px] text-[#1A1A1A] font-semibold">
                   {tradeMode === 'buy' ? 'To win' : "You'll receive"}
                 </p>
-                <p className="text-[12px] text-[#999] mt-0.5">
+                <p className="text-[11px] text-[#999] mt-0.5">
                   Avg. Price {(selectedPrice * 100).toFixed(1)}¢
                 </p>
               </div>
-              <p className="text-[28px] font-bold tracking-tight tabular-nums" style={{ color: tradeSide === 'yes' ? '#34A853' : '#EA4335' }}>
+              <p className="text-[28px] font-semibold tracking-tight tabular-nums" style={{ color: tradeSide === 'yes' ? '#34A853' : '#EA4335' }}>
                 ${toWin.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -495,7 +498,7 @@ function TradeCard({ market }: { market: import('../types').Market }) {
             window.open(market.url, '_blank', 'noopener,noreferrer')
           }}
           disabled={!market.url || market.url === '#'}
-          className="w-full font-semibold py-3.5 rounded-lg text-[16px] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-none transition-colors duration-150 mt-3"
+          className="w-full font-semibold py-2.5 rounded-lg text-[14px] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer border-none transition-colors duration-150 mt-2"
           style={{
             background: tradeSide === 'yes' ? '#34A853' : '#EA4335',
             color: '#fff',
