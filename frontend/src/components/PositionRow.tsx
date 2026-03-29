@@ -1,10 +1,8 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown, Clock } from 'lucide-react'
 import type { Position, Market } from '../types'
 import { useStore } from '../store/useStore'
-import MiniSparkline from './charts/MiniSparkline'
-import ConfidenceBar from './charts/ConfidenceBar'
+import { fetchChart, type ChartPoint } from '../api/client'
 
 interface Props {
   position: Position
@@ -17,149 +15,205 @@ export default function PositionRow({ position, markets }: Props) {
   const selectedMarkets = useStore((s) => s.selectedMarkets)
   const toggleMarketSelection = useStore((s) => s.toggleMarketSelection)
 
+  const [chartPoints, setChartPoints] = useState<ChartPoint[] | null>(null)
+  const [sparkHover, setSparkHover] = useState(false)
+
+  useEffect(() => {
+    fetchChart(position.ticker).then((d) => {
+      if (d?.points?.length) setChartPoints(d.points)
+    })
+  }, [position.ticker])
+
   return (
-    <motion.div
-      className="card overflow-hidden"
-      layout
-      whileHover={{ y: -2, boxShadow: '0 8px 30px rgba(0,0,0,0.08)' }}
-      transition={{ duration: 0.2 }}
-    >
-      {/* Stock header */}
+    <div className={`bg-white rounded-2xl border border-black/[0.06] overflow-visible relative ${sparkHover ? 'z-30' : ''}`}>
+      {/* Stock header — fixed-width columns for alignment */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-bg-hover transition-colors duration-200 bg-transparent border-none text-left"
+        className="w-full flex items-center px-5 py-5 cursor-pointer hover:bg-bg-hover transition-all duration-200 bg-transparent border-none text-left group overflow-visible"
         aria-expanded={expanded}
       >
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-[13px] text-white" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
-            {position.ticker.slice(0, 2)}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-text-primary text-[15px]">{position.ticker}</span>
-              <span className="text-text-muted text-[12px] hidden sm:inline font-medium">{position.name}</span>
-            </div>
-            <p className="text-text-muted text-[12px] mt-0.5">{position.shares} shares · avg ${position.avgCost.toFixed(2)}</p>
-          </div>
+        {/* Left: ticker info — fixed width so sparklines align */}
+        <div className="w-[120px] flex-shrink-0">
+          <span className="font-bold text-text-primary text-[15px] block">
+            {position.ticker}
+          </span>
+          <span className="text-text-muted text-[12px] block truncate">
+            {position.shares} share{position.shares !== 1 ? 's' : ''}
+          </span>
         </div>
 
-        <div className="flex items-center gap-4">
-          <MiniSparkline positive={isPositive} seed={position.ticker.charCodeAt(0) * 100 + position.ticker.charCodeAt(1)} />
-          <div className="text-right">
-            <p className="text-text-primary font-bold text-[16px] tabular-nums">${position.marketValue.toLocaleString()}</p>
-            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums mt-0.5 ${isPositive ? 'text-green bg-green-bg' : 'text-red bg-red-bg'}`}>
-              {isPositive ? '+' : ''}{position.gainLossPercent.toFixed(2)}%
+        {/* Center: sparkline — fills remaining space equally for all rows */}
+        <div className="flex-1 mx-4 hidden sm:block overflow-visible" onClick={(e) => e.stopPropagation()}>
+          {chartPoints ? (
+            <Sparkline points={chartPoints} positive={isPositive} onHoverChange={setSparkHover} />
+          ) : (
+            <div className="h-[48px] flex items-center">
+              <div className={`h-[1.5px] w-full rounded-full ${isPositive ? 'bg-green/20' : 'bg-red/20'}`} />
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {markets.length > 0 && (
-              <span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full tabular-nums" style={{ background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)' }}>
-                {markets.length}
-              </span>
-            )}
-            <motion.div
-              className="text-text-muted"
-              animate={{ rotate: expanded ? 180 : 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <ChevronDown size={18} />
-            </motion.div>
-          </div>
+          )}
+        </div>
+
+        {/* Right: price + change — fixed width */}
+        <div className="w-[130px] flex-shrink-0 text-right">
+          <p className="text-text-primary font-bold text-[15px] tabular-nums">
+            ${position.currentPrice.toFixed(2)}
+          </p>
+          <p className={`text-[12px] font-semibold tabular-nums mt-0.5 ${
+            isPositive ? 'text-green' : 'text-red'
+          }`}>
+            {isPositive ? '+' : ''}{position.gainLossPercent.toFixed(2)}%
+          </p>
+        </div>
+
+        {/* Chevron */}
+        <div className={`ml-3 text-text-muted transition-transform duration-300 ease-out flex-shrink-0 ${expanded ? 'rotate-180' : ''} group-hover:text-text-secondary`}>
+          <ChevronDown size={16} />
         </div>
       </button>
 
-      {/* Related markets */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            className="border-t border-border overflow-hidden"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {markets.length === 0 ? (
-              <div className="py-10 text-center">
-                <p className="text-text-muted text-[13px]">No related markets found</p>
-              </div>
-            ) : (
-              <div>
-                {markets.map((market, i) => {
-                  const isSelected = selectedMarkets.some((m) => m.id === market.id)
-                  const endDate = new Date(market.endDate)
-                  const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / 86400000))
+      {/* Expanded: stats + related markets */}
+      {expanded && (
+        <div className="border-t border-border animate-slide-down">
+          {/* Position stats */}
+          <div className="px-5 py-3 flex gap-8 text-xs border-b border-border">
+            <Stat label="Market Value" value={`$${position.marketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+            <Stat label="Your Avg Cost" value={`$${position.avgCost.toFixed(2)}`} />
+            <Stat label="Total Return" value={`${isPositive ? '+' : ''}$${position.gainLoss.toFixed(2)}`} color={isPositive ? 'text-green' : 'text-red'} />
+            <Stat label="Shares" value={String(position.shares)} />
+          </div>
 
-                  return (
-                    <motion.div
-                      key={market.id}
-                      className={`flex items-center gap-4 px-5 py-4 cursor-pointer ${i > 0 ? 'border-t border-border' : ''} ${isSelected ? 'bg-blue-bg/60' : 'hover:bg-bg-hover'}`}
-                      onClick={() => toggleMarketSelection(market)}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.08, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      whileHover={{ x: 4 }}
-                      role="checkbox"
-                      aria-checked={isSelected}
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMarketSelection(market) }
-                      }}
+          {markets.length === 0 ? (
+            <div className="py-10 text-center border-t border-border">
+              <p className="text-text-muted text-[13px]">No related markets found</p>
+            </div>
+          ) : (
+            <div>
+              {markets.map((market) => {
+                const isSelected = selectedMarkets.some((m) => m.id === market.id)
+                const endDate = new Date(market.endDate)
+                const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / 86400000))
+
+                return (
+                  <div
+                    key={market.id}
+                    className={`flex items-center gap-4 px-5 py-4 transition-all duration-200 cursor-pointer border-t border-border ${
+                      isSelected ? 'bg-blue-bg/60' : 'hover:bg-bg-hover'
+                    }`}
+                    onClick={() => toggleMarketSelection(market)}
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleMarketSelection(market) }
+                    }}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-150 ${
+                        isSelected ? 'bg-blue border-blue' : 'border-text-muted/30 hover:border-text-muted'
+                      }`}
                     >
-                      {/* Checkbox */}
-                      <motion.div
-                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-blue' : 'border-border hover:border-text-muted'}`}
-                        style={isSelected ? { background: 'linear-gradient(135deg, #3B82F6, #2563EB)' } : {}}
-                        animate={isSelected ? { scale: [1, 1.2, 1] } : { scale: 1 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {isSelected && (
-                          <motion.svg width="11" height="11" viewBox="0 0 12 12" fill="none" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 25 }}>
-                            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </motion.svg>
-                        )}
-                      </motion.div>
-
-                      {/* Market info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-text-primary leading-snug">{market.title}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-[11px] text-text-muted flex items-center gap-1 font-medium"><Clock size={10} />{daysLeft}d left</span>
-                          <span className="text-[11px] text-text-muted tabular-nums font-medium">${(market.volume / 1_000_000).toFixed(1)}M vol</span>
-                        </div>
-                        <div className="mt-2 max-w-[200px]">
-                          <ConfidenceBar confidence={market.confidence} delay={i * 0.1} />
-                        </div>
+                      {isSelected && (
+                        <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-text-primary leading-snug">{market.title}</p>
+                      <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[11px] text-text-muted flex items-center gap-1 font-medium"><Clock size={10} />{daysLeft}d left</span>
+                        <span className="text-[11px] text-text-muted tabular-nums font-medium">${(market.volume / 1_000_000).toFixed(1)}M vol</span>
                       </div>
+                    </div>
+                    <div className="flex-shrink-0 text-right tabular-nums">
+                      <span className="text-green text-[13px] font-bold">{market.confidence}¢</span>
+                      <span className="text-text-muted text-[11px] mx-1">/</span>
+                      <span className="text-red text-[13px] font-bold">{100 - market.confidence}¢</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
-                      {/* Yes / No buttons */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <motion.div
-                          className="btn-3d btn-3d-green flex flex-col items-center justify-center w-[56px] h-[44px] rounded-xl cursor-pointer"
-                          style={{ background: 'linear-gradient(180deg, #F0FDF4, #DCFCE7)' }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span className="text-green text-[14px] font-extrabold leading-none tabular-nums">{market.confidence}¢</span>
-                          <span className="text-green/60 text-[9px] font-bold mt-0.5 uppercase tracking-wider">Yes</span>
-                        </motion.div>
-                        <motion.div
-                          className="btn-3d btn-3d-red flex flex-col items-center justify-center w-[56px] h-[44px] rounded-xl cursor-pointer"
-                          style={{ background: 'linear-gradient(180deg, #FEF2F2, #FEE2E2)' }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <span className="text-red text-[14px] font-extrabold leading-none tabular-nums">{100 - market.confidence}¢</span>
-                          <span className="text-red/60 text-[9px] font-bold mt-0.5 uppercase tracking-wider">No</span>
-                        </motion.div>
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div>
+      <p className="text-text-muted text-[10px] font-medium mb-0.5">{label}</p>
+      <p className={`font-semibold tabular-nums ${color || 'text-text-primary'}`}>{value}</p>
+    </div>
+  )
+}
+
+// ── Sparkline with Robinhood-style hover ─────
+
+function Sparkline({ points, positive, onHoverChange }: { points: ChartPoint[]; positive: boolean; onHoverChange?: (hovering: boolean) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [hover, setHover] = useState<{ pct: number; price: number; time: number; y: number } | null>(null)
+  const color = positive ? '#10B981' : '#EF4444'
+
+  const H = 48
+  const pad = 6
+  const prices = points.map((p) => p.price)
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+  const range = max - min || 1
+
+  const toY = (p: number) => pad + (1 - (p - min) / range) * (H - pad * 2)
+
+  const svgPath = points.map((p, i) =>
+    `${i === 0 ? 'M' : 'L'}${((i / (points.length - 1)) * 100).toFixed(2)},${toY(p.price).toFixed(1)}`
+  ).join(' ')
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const el = containerRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    const idx = Math.round(pct * (points.length - 1))
+    const pt = points[idx]
+    if (pt) setHover({ pct: pct * 100, price: pt.price, time: pt.time, y: toY(pt.price) })
+  }, [points, min, range])
+
+  return (
+    <div ref={containerRef} className="relative cursor-crosshair" style={{ height: H, overflow: 'visible' }}
+      onMouseMove={onMove} onMouseEnter={() => onHoverChange?.(true)} onMouseLeave={() => { setHover(null); onHoverChange?.(false) }}>
+      <svg viewBox={`0 0 100 ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none">
+        <path d={svgPath} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+      </svg>
+
+      {hover && (
+        <>
+          {/* Vertical line */}
+          <div className="absolute top-0 pointer-events-none"
+            style={{ left: `${hover.pct}%`, height: H, width: 1, backgroundColor: color, opacity: 0.4 }} />
+          {/* Dot */}
+          <div className="absolute pointer-events-none"
+            style={{
+              left: `${hover.pct}%`, top: hover.y,
+              width: 8, height: 8, borderRadius: '50%',
+              backgroundColor: color, border: '2px solid white',
+              boxShadow: `0 0 0 1.5px ${color}`,
+              transform: 'translate(-50%, -50%)',
+            }} />
+          {/* Tooltip */}
+          <div className="absolute px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap pointer-events-none z-50"
+            style={{
+              left: `${Math.max(10, Math.min(90, hover.pct))}%`,
+              top: H + 6,
+              transform: 'translateX(-50%)',
+              background: '#111827', color: 'white',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            }}>
+            ${hover.price.toFixed(2)} &middot; {new Date(hover.time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </div>
+        </>
+      )}
+    </div>
   )
 }
