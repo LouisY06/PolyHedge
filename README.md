@@ -1,5 +1,7 @@
 # PolyHedge
 
+[![Demo Video](https://img.youtube.com/vi/7Bpi9FOZCKk/maxresdefault.jpg)](https://www.youtube.com/watch?v=7Bpi9FOZCKk)
+
 Hedge your stock portfolio using Polymarket prediction markets. Upload your holdings, get AI-powered analysis of relevant markets, and build a diversified prediction market index tailored to your positions.
 
 ### Portfolio Analysis & Trading
