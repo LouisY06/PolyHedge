@@ -4,7 +4,7 @@ const GAMMA_API_BASE = "https://gamma-api.polymarket.com";
 const POLYMARKET_BASE_URL = "https://polymarket.com/event";
 const DEFAULT_RESULT_LIMIT = 5;
 const FETCH_BATCH = 500;
-const MIN_RELEVANCE_SCORE = 5;
+const MIN_RELEVANCE_SCORE = 10;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 const API_KEY = process.env.POLYMARKET_API_KEY;
@@ -158,10 +158,9 @@ function scoreMarketRelevance(raw, keyword) {
   if (slugHasSegment) score += 30;
   else if (slugHasSubstring && kw.length >= minSubLen) score += 10;
 
-  // Description matching (weaker signal but catches more results)
-  if (score === 0) {
-    if (matchesWholeWord(desc, kw)) score += 12;
-    else if (desc.includes(kw) && kw.length >= minSubLen) score += 5;
+  // Description matching — whole word only to avoid false positives
+  if (score === 0 && matchesWholeWord(desc, kw)) {
+    score += 12;
   }
 
   // No text match at all → irrelevant
