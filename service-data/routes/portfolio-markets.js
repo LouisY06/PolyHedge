@@ -1,5 +1,5 @@
 const { searchMarketsByKeyword, scoreMarketRelevance } = require("../polymarket");
-const { getKeywordsForHolding } = require("../ticker-keywords");
+const { resolveKeywordsForHolding } = require("../ticker-keywords");
 
 const MARKETS_PER_HOLDING = 3;
 
@@ -36,7 +36,7 @@ function parseWeight(val) {
  * collect candidates, dedupe, rank, and return the top results.
  */
 async function getMarketsForHolding(holding) {
-  const keywords = getKeywordsForHolding(holding);
+  const keywords = await resolveKeywordsForHolding(holding);
 
   // Search each keyword in parallel, collect all candidates with their matched keyword
   const searchResults = await Promise.allSettled(

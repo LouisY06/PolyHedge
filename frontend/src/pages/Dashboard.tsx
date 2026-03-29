@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LogOut, TrendingUp, TrendingDown, Plus, Package, Shield, BarChart3, RefreshCw, Loader2 } from 'lucide-react'
 import { useStore } from '../store/useStore'
-import { fetchAllMarkets, analyzePortfolio } from '../api/client'
+import { fetchMarketsForPositions, analyzePortfolio } from '../api/client'
 import type { Bundle } from '../types'
 import PositionRow from '../components/PositionRow'
 import BundleCard from '../components/BundleCard'
@@ -9,6 +9,8 @@ import HedgeDial from '../components/HedgeDial'
 import HedgeExplainerModal from '../components/HedgeExplainerModal'
 import Skeleton from '../components/Skeleton'
 import AnalysisView from '../components/AnalysisView'
+import PayoffChart from '../components/PayoffChart'
+import PayoutHeatmap from '../components/PayoutHeatmap'
 
 export default function Dashboard() {
   const positions = useStore((s) => s.positions)
@@ -38,8 +40,12 @@ export default function Dashboard() {
   const [tradeSuccess, setTradeSuccess] = useState(false)
 
   useEffect(() => {
-    fetchAllMarkets().then(setMarkets).finally(() => setLoading(false))
-  }, [])
+    if (positions.length > 0) {
+      fetchMarketsForPositions(positions).then(setMarkets).finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
+  }, [positions.length])
 
   useEffect(() => {
     if (positions.length > 0 && !analysis && !analysisLoading) runAnalysis()
@@ -224,8 +230,8 @@ export default function Dashboard() {
           </div>
 
           {/* Right: Trade Panel */}
-          <div className="space-y-5">
-            <div className="card-static sticky top-[76px] overflow-hidden">
+          <div className="space-y-5 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto lg:sticky lg:top-[76px] scrollbar-thin">
+            <div className="card-static overflow-hidden">
               {/* Event title */}
               <div className="px-5 pt-5 pb-3">
                 {activeMarket ? (
@@ -364,8 +370,28 @@ export default function Dashboard() {
                 <p className="text-text-muted text-[11px] text-center">
                   By trading, you agree to the Terms of Use.
                 </p>
+
+                {/* Payoff diagram */}
+                {activeMarket && (
+                  <PayoffChart
+                    probability={activeMarket.confidence}
+                    amount={tradeAmount}
+                    side={tradeSide}
+                    mode={tradeMode}
+                  />
+                )}
               </div>
             </div>
+
+            {/* P&L Payoff Surface */}
+            {activeMarket && (
+              <div className="card-static p-5">
+                <PayoutHeatmap
+                  probability={activeMarket.confidence}
+                  side={tradeSide}
+                />
+              </div>
+            )}
 
             {/* Hedge Builder */}
             <div className="card-static p-5 space-y-4">

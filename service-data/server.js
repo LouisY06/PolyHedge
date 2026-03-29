@@ -4,7 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 
-const { searchMarketsByKeyword } = require("./polymarket");
+const { searchMarketsByKeyword, browseMarkets } = require("./polymarket");
 const { getQuote, getQuotes } = require("./yahoo-finance");
 const {
   normalizeManualPosition,
@@ -48,6 +48,107 @@ const upload = multer({
     }
   },
 });
+
+// ---------------------------------------------------------------------------
+// GET /markets/browse?q=&limit=
+// Browse/search all active Polymarket markets. No query → top by volume.
+// ---------------------------------------------------------------------------
+app.get("/markets/browse", async (req, res) => {
+  const { q, limit } = req.query;
+
+  try {
+    const markets = await browseMarkets({
+      query: q || "",
+      limit: Math.min(Number(limit) || 100, 500),
+    });
+
+    return res.json({
+      query: q || null,
+      count: markets.length,
+      markets,
+    });
+  } catch (err) {
+    console.error(`[/markets/browse] Failed:`, err.message);
+    if (err.response) return res.status(502).json({ error: "Upstream Polymarket API error", detail: err.message });
+    if (err.code === "ECONNABORTED") return res.status(504).json({ error: "Polymarket API timeout" });
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /markets/for-positions
+// Given position tickers, find relevant Polymarket markets and tag each
+// with relatedTickers for the frontend.
+// Body: { tickers: ["AAPL","TSLA",...], limit?: number }
+// ---------------------------------------------------------------------------
+app.post("/markets/for-positions", async (req, res) => {
+  const { tickers, limit = 5 } = req.body || {};
+
+  if (!Array.isArray(tickers) || tickers.length === 0) {
+    return res.status(400).json({ error: "Body must be { tickers: [\"AAPL\",...] }" });
+  }
+
+  try {
+    const { resolveKeywordsForHolding } = require("./ticker-keywords");
+    const seen = new Map(); // marketId → { market, relatedTickers }
+
+    await Promise.all(
+      tickers.map(async (ticker) => {
+        const t = String(ticker).trim().toUpperCase();
+        const keywords = await resolveKeywordsForHolding({ ticker: t, companyName: t });
+
+        for (const kw of keywords) {
+          const markets = await searchMarketsByKeyword(kw, { limit });
+          for (const m of markets) {
+            if (seen.has(m.id)) {
+              const entry = seen.get(m.id);
+              if (!entry.relatedTickers.includes(t)) entry.relatedTickers.push(t);
+            } else {
+              seen.set(m.id, { market: m, relatedTickers: [t] });
+            }
+          }
+        }
+      })
+    );
+
+    // Convert to frontend Market shape with relatedTickers
+    const markets = Array.from(seen.values()).map(({ market, relatedTickers }) => ({
+      id: market.id,
+      title: market.title,
+      image: market.image || "",
+      confidence: market.probability ?? 50,
+      volume: market.volume || 0,
+      endDate: market.endDate || "",
+      category: inferCategory(market.title),
+      url: market.url || "#",
+      relatedTickers,
+    }));
+
+    // Sort by volume descending
+    markets.sort((a, b) => b.volume - a.volume);
+
+    return res.json({ count: markets.length, markets });
+  } catch (err) {
+    console.error("[/markets/for-positions] Failed:", err.message);
+    if (err.response) return res.status(502).json({ error: "Upstream Polymarket API error", detail: err.message });
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * Infer a category from a market title (best-effort heuristic).
+ */
+function inferCategory(title) {
+  const t = title.toLowerCase();
+  if (/\b(bitcoin|crypto|ethereum|btc|eth|solana|nft)\b/.test(t)) return "Crypto";
+  if (/\b(trump|biden|congress|senate|election|president|democrat|republican|governor)\b/.test(t)) return "Politics";
+  if (/\b(ai|gpt|llm|artificial intelligence|machine learning|openai|anthropic)\b/.test(t)) return "AI";
+  if (/\b(nba|nfl|nhl|mlb|fifa|ufc|boxing|premier league|world cup)\b/.test(t)) return "Sports";
+  if (/\b(fed|interest rate|inflation|gdp|recession|tariff)\b/.test(t)) return "Economics";
+  if (/\b(apple|google|nvidia|tesla|microsoft|meta|amazon)\b/.test(t)) return "Tech";
+  if (/\b(ipo|stock|market cap|revenue|profit|earnings)\b/.test(t)) return "Business";
+  return "Other";
+}
 
 // ---------------------------------------------------------------------------
 // GET /markets?keyword=

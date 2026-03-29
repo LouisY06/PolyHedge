@@ -1,5 +1,5 @@
 const { searchMarketsByKeyword } = require("../polymarket");
-const { getKeywordsForHolding } = require("../ticker-keywords");
+const { resolveKeywordsForHolding } = require("../ticker-keywords");
 const { callK2Think } = require("../../service-ai/k2think");
 const {
   buildAnalysisPrompt,
@@ -107,7 +107,7 @@ async function gatherCandidates(holdings) {
   // Process all holdings in parallel
   await Promise.all(
     holdings.map(async (holding) => {
-      const keywords = getKeywordsForHolding(holding);
+      const keywords = await resolveKeywordsForHolding(holding);
 
       // Search each keyword (parallel within holding)
       const results = await Promise.allSettled(
