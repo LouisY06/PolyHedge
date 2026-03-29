@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
-import { LogOut, TrendingUp, TrendingDown, Plus, Package, Shield, BarChart3 } from 'lucide-react'
+import { LogOut, TrendingUp, TrendingDown, Plus, Package, Shield, BarChart3, RefreshCw, Loader2 } from 'lucide-react'
 import { useStore } from '../store/useStore'
-import { fetchPositions, fetchAllMarkets } from '../api/client'
+import { fetchAllMarkets, analyzePortfolio } from '../api/client'
 import type { Bundle } from '../types'
 import PositionRow from '../components/PositionRow'
 import BundleCard from '../components/BundleCard'
 import HedgeDial from '../components/HedgeDial'
 import HedgeExplainerModal from '../components/HedgeExplainerModal'
 import Skeleton from '../components/Skeleton'
+import AnalysisView from '../components/AnalysisView'
 
 export default function Dashboard() {
   const positions = useStore((s) => s.positions)
-  const setPositions = useStore((s) => s.setPositions)
   const markets = useStore((s) => s.markets)
   const setMarkets = useStore((s) => s.setMarkets)
   const selectedMarkets = useStore((s) => s.selectedMarkets)
@@ -19,11 +19,18 @@ export default function Dashboard() {
   const addBundle = useStore((s) => s.addBundle)
   const clearSelections = useStore((s) => s.clearSelections)
   const setLoggedIn = useStore((s) => s.setLoggedIn)
+  const analysis = useStore((s) => s.analysis)
+  const analysisLoading = useStore((s) => s.analysisLoading)
+  const analysisError = useStore((s) => s.analysisError)
+  const setAnalysis = useStore((s) => s.setAnalysis)
+  const setAnalysisLoading = useStore((s) => s.setAnalysisLoading)
+  const setAnalysisError = useStore((s) => s.setAnalysisError)
 
   const [loading, setLoading] = useState(true)
   const [bundleName, setBundleName] = useState('')
   const [hedgePercent, setHedgePercent] = useState(50)
   const [showExplainer, setShowExplainer] = useState(false)
+  const [objective, setObjective] = useState('hedge')
   const [tradeMode, setTradeMode] = useState<'buy' | 'sell'>('buy')
   const [tradeSide, setTradeSide] = useState<'yes' | 'no'>('yes')
   const [tradeAmount, setTradeAmount] = useState(0)
@@ -31,11 +38,20 @@ export default function Dashboard() {
   const [tradeSuccess, setTradeSuccess] = useState(false)
 
   useEffect(() => {
-    Promise.all([
-      fetchPositions().then(setPositions),
-      fetchAllMarkets().then(setMarkets),
-    ]).finally(() => setLoading(false))
+    fetchAllMarkets().then(setMarkets).finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (positions.length > 0 && !analysis && !analysisLoading) runAnalysis()
+  }, [positions.length])
+
+  const runAnalysis = async () => {
+    if (positions.length === 0) return
+    setAnalysisLoading(true); setAnalysisError(null)
+    try { setAnalysis(await analyzePortfolio(positions, { objective, beginnerMode: true })) }
+    catch (err: unknown) { setAnalysisError(err instanceof Error ? err.message : 'Analysis failed') }
+    finally { setAnalysisLoading(false) }
+  }
 
   const totalValue = positions.reduce((s, p) => s + p.marketValue, 0)
   const totalGain = positions.reduce((s, p) => s + p.gainLoss, 0)
@@ -79,7 +95,7 @@ export default function Dashboard() {
             </span>
           </div>
           <button
-            onClick={() => setLoggedIn(false)}
+            onClick={() => { setLoggedIn(false); setAnalysis(null) }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] text-text-muted hover:text-red hover:bg-red-bg transition-all duration-200 bg-transparent border-none cursor-pointer font-medium"
             aria-label="Log out"
           >
@@ -134,8 +150,43 @@ export default function Dashboard() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Positions */}
-          <div className="lg:col-span-2">
+          {/* Left: Analysis + Positions */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* K2Think Analysis */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-[13px] font-bold text-text-secondary uppercase tracking-wider">Portfolio Analysis</h2>
+                <div className="flex items-center gap-2">
+                  {(['hedge', 'amplify', 'explore'] as const).map((o) => (
+                    <button key={o} onClick={() => setObjective(o)}
+                      className={`text-[11px] font-semibold px-3 py-1 rounded-full border cursor-pointer capitalize transition-all duration-200 ${
+                        objective === o ? 'bg-text-primary text-white border-text-primary' : 'bg-bg-card border-border text-text-secondary hover:border-text-muted'
+                      }`}>{o}</button>
+                  ))}
+                  <button onClick={runAnalysis} disabled={analysisLoading || positions.length === 0}
+                    className="btn-3d btn-3d-blue bg-blue text-white font-bold py-1.5 px-4 rounded-full text-[11px] disabled:opacity-30 cursor-pointer border-none">
+                    <RefreshCw size={10} className={`inline mr-1 ${analysisLoading ? 'animate-spin' : ''}`} />
+                    {analysisLoading ? 'Running' : 'Analyze'}
+                  </button>
+                </div>
+              </div>
+              {analysisLoading && !analysis && (
+                <div className="card-static p-8 text-center">
+                  <Loader2 size={28} className="animate-spin text-blue mx-auto mb-3" />
+                  <p className="text-text-primary font-bold text-[15px]">Analyzing your portfolio...</p>
+                  <p className="text-text-muted text-xs mt-1">Searching Polymarket, running K2Think AI</p>
+                </div>
+              )}
+              {analysisError && (
+                <div className="card-static p-5 text-center">
+                  <p className="text-red text-sm font-semibold">{analysisError}</p>
+                  <button onClick={runAnalysis} className="btn-3d btn-3d-blue bg-blue text-white font-semibold py-2 px-5 rounded-full text-[12px] cursor-pointer border-none mt-3">Try again</button>
+                </div>
+              )}
+              {analysis && <AnalysisView analysis={analysis} />}
+            </section>
+
+            {/* Positions */}
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[13px] font-bold text-text-secondary uppercase tracking-wider">
                 Your Positions & Related Events
