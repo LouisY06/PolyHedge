@@ -8,26 +8,16 @@ import type { Position } from '../types'
 const GOOGLE_CLIENT_ID = '182734869118-anq8m434ve86scrdnl83ehj2uph2qik7.apps.googleusercontent.com'
 
 interface BackendPosition {
-  ticker: string
-  name: string
-  shares: number
-  averageCost: number | null
-  currentPrice: number | null
-  marketValue: number | null
-  gainLoss: number | null
-  gainLossPercent: number | null
+  ticker: string; name: string; shares: number; averageCost: number | null
+  currentPrice: number | null; marketValue: number | null; gainLoss: number | null; gainLossPercent: number | null
 }
 
 function toFrontendPosition(bp: BackendPosition): Position {
   return {
-    ticker: bp.ticker,
-    name: bp.name || bp.ticker,
-    shares: bp.shares,
-    avgCost: bp.averageCost ?? 0,
-    currentPrice: bp.currentPrice ?? bp.averageCost ?? 0,
+    ticker: bp.ticker, name: bp.name || bp.ticker, shares: bp.shares,
+    avgCost: bp.averageCost ?? 0, currentPrice: bp.currentPrice ?? bp.averageCost ?? 0,
     marketValue: bp.marketValue ?? bp.shares * (bp.currentPrice ?? bp.averageCost ?? 0),
-    gainLoss: bp.gainLoss ?? 0,
-    gainLossPercent: bp.gainLossPercent ?? 0,
+    gainLoss: bp.gainLoss ?? 0, gainLossPercent: bp.gainLossPercent ?? 0,
   }
 }
 
@@ -126,7 +116,7 @@ export default function LandingPage() {
             disabled={loading}
             className="w-full font-medium py-3 rounded-lg text-[14px] disabled:opacity-50 cursor-pointer border border-[#E0E0E0] flex items-center justify-center gap-2 text-[#1A1A1A] bg-white hover:bg-[#F8F8F8] transition-colors"
           >
-            <Upload size={16} />
+            <Upload size={15} />
             Import CSV / Manual Entry
           </button>
 

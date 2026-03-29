@@ -341,7 +341,10 @@ function IndexView({ analysisCache }: {
         const targetPrice = rawFair != null ? Math.round(isYes ? rawFair : 100 - rawFair) : null
 
         return (
-          <div key={a.id} className="py-3 border-b border-black/[0.04]">
+          <a key={a.id} href={a.url || '#'} target="_blank" rel="noopener noreferrer"
+            className="block py-3 border-b border-black/[0.04] cursor-pointer hover:bg-bg-hover transition-colors -mx-1 px-1 rounded no-underline"
+            onClick={(e) => { if (!a.url || a.url === '#') e.preventDefault() }}
+          >
             <div className="flex items-center justify-between">
               <p className="text-[13px] text-text-primary leading-snug flex-1 min-w-0 mr-3">{a.title}</p>
               <span className="text-[15px] font-medium text-text-primary tabular-nums flex-shrink-0">{a.pct.toFixed(1)}%</span>
@@ -351,14 +354,9 @@ function IndexView({ analysisCache }: {
                 <span>{a.ticker}</span>
                 <span>{side} {marketPrice}¢{targetPrice != null && targetPrice !== marketPrice && (<> → <span className={targetPrice > marketPrice ? 'text-green' : 'text-red'}>{targetPrice}¢</span></>)}</span>
               </div>
-              {a.url && (
-                <a href={a.url} target="_blank" rel="noopener noreferrer"
-                  className="text-[11px] text-text-muted hover:text-text-primary transition-colors">
-                  Trade
-                </a>
-              )}
+              <span className="text-[11px] text-text-muted">Trade →</span>
             </div>
-          </div>
+          </a>
         )
       })}
     </div>
