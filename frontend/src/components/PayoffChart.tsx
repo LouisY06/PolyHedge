@@ -168,18 +168,28 @@ export default function PayoffChart({ probability, amount, side, mode }: Props) 
             {/* Breakeven dot */}
             <circle cx={toX(p)} cy={zeroY} r="4" fill="white" stroke="#3B82F6" strokeWidth="2" />
 
-            {/* Y-axis labels */}
-            <text x={padL - 4} y={toY(maxProfit)} textAnchor="end" dominantBaseline="middle"
-              className="text-[9px] font-semibold" fill="#10B981">{formatDollar(maxProfit)}</text>
-            <text x={padL - 4} y={toY(maxLoss)} textAnchor="end" dominantBaseline="middle"
-              className="text-[9px] font-semibold" fill="#EF4444">{formatDollar(maxLoss)}</text>
+            {/* Y-axis labels — hide if too close to $0 line */}
+            {Math.abs(toY(maxProfit) - zeroY) > 14 && (
+              <text x={padL - 4} y={toY(maxProfit)} textAnchor="end" dominantBaseline="middle"
+                className="text-[9px] font-semibold" fill="#10B981">{formatDollar(maxProfit)}</text>
+            )}
+            {Math.abs(toY(maxLoss) - zeroY) > 14 && (
+              <text x={padL - 4} y={toY(maxLoss)} textAnchor="end" dominantBaseline="middle"
+                className="text-[9px] font-semibold" fill="#EF4444">{formatDollar(maxLoss)}</text>
+            )}
             <text x={padL - 4} y={zeroY} textAnchor="end" dominantBaseline="middle"
               className="text-[9px] font-medium" fill="#9CA3AF">$0</text>
 
-            {/* X-axis labels */}
-            <text x={toX(0)} y={H - 4} textAnchor="middle" className="text-[9px] font-medium" fill="#9CA3AF">0%</text>
-            <text x={toX(0.5)} y={H - 4} textAnchor="middle" className="text-[9px] font-medium" fill="#9CA3AF">50%</text>
-            <text x={toX(1)} y={H - 4} textAnchor="middle" className="text-[9px] font-medium" fill="#9CA3AF">100%</text>
+            {/* X-axis labels — hide if too close to breakeven */}
+            {probability > 12 && (
+              <text x={toX(0)} y={H - 4} textAnchor="middle" className="text-[9px] font-medium" fill="#9CA3AF">0%</text>
+            )}
+            {Math.abs(probability - 50) > 12 && (
+              <text x={toX(0.5)} y={H - 4} textAnchor="middle" className="text-[9px] font-medium" fill="#9CA3AF">50%</text>
+            )}
+            {probability < 88 && (
+              <text x={toX(1)} y={H - 4} textAnchor="middle" className="text-[9px] font-medium" fill="#9CA3AF">100%</text>
+            )}
 
             {/* Breakeven label */}
             <text x={toX(p)} y={H - 4} textAnchor="middle" className="text-[9px] font-bold" fill="#3B82F6">
