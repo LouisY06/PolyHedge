@@ -51,6 +51,28 @@ export async function submitManualPositions(
   return (data.positions as BackendPosition[]).map(toFrontendPosition)
 }
 
+// ── Gmail import ──────────────────────────────────────
+
+export interface GmailImportResult {
+  positions: BackendPosition[]
+  tradesFound: number
+  emailsScanned: number
+  message?: string
+}
+
+export async function importFromGmail(code: string, redirectUri: string): Promise<GmailImportResult> {
+  const res = await fetch(`${API_BASE}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, redirectUri }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Gmail import failed' }))
+    throw new Error(err.error || 'Gmail import failed')
+  }
+  return res.json()
+}
+
 // ── Chart data ─────────────────────────────────────────
 
 export interface ChartPoint { time: number; price: number }
