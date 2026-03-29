@@ -7,7 +7,7 @@ declare global {
             client_id: string
             scope: string
             ux_mode: string
-            redirect_uri: string
+            redirect_uri?: string
             callback: (response: { code?: string; error?: string }) => void
           }) => { requestCode: () => void }
         }

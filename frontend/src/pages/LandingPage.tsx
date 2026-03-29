@@ -47,14 +47,11 @@ export default function LandingPage() {
     setLoading(true)
     setError('')
 
-    const redirectUri = window.location.origin
-
     const client = window.google.accounts.oauth2.initCodeClient({
       client_id: GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/gmail.readonly',
       ux_mode: 'popup',
-      redirect_uri: redirectUri,
-      callback: async (response) => {
+      callback: async (response: { code?: string; error?: string }) => {
         if (response.error) {
           setError(`Google sign-in failed: ${response.error}`)
           setLoading(false)
@@ -68,7 +65,15 @@ export default function LandingPage() {
         }
 
         try {
-          const result = await importFromGmail(response.code, redirectUri)
+          const result = await importFromGmail(response.code, 'postmessage')
+
+          if (result.positions.length === 0) {
+            // No trades found — go to import page with a message
+            navigate('/import', { state: { gmailMessage: result.message || 'No trades found in your Robinhood emails' } })
+            setLoading(false)
+            return
+          }
+
           const positions = (result.positions as BackendPosition[]).map(toFrontendPosition)
           setGmailPreviewPositions(positions)
           navigate('/gmail-preview')

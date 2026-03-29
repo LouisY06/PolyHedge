@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, Plus, Trash2, Loader2, Shield, FileSpreadsheet, Lock } from 'lucide-react'
+import { Upload, Plus, Trash2, Loader2, Shield, FileSpreadsheet, Lock, MailX } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import { useStore } from '../store/useStore'
 import { uploadCSV, submitManualPositions } from '../api/client'
 
@@ -10,6 +11,8 @@ const emptyRow = (): ManualRow => ({ ticker: '', shares: '', averageCost: '' })
 export default function ImportPage() {
   const setPositions = useStore((s) => s.setPositions)
   const setLoggedIn = useStore((s) => s.setLoggedIn)
+  const location = useLocation()
+  const gmailMessage = (location.state as { gmailMessage?: string } | null)?.gmailMessage
   const [tab, setTab] = useState<'upload' | 'manual'>('upload')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -102,6 +105,19 @@ export default function ImportPage() {
           </h1>
           <p className="text-white/40 text-[15px] mt-2 font-medium">Import your portfolio to get started</p>
         </motion.div>
+
+        {/* Gmail message banner */}
+        {gmailMessage && (
+          <motion.div
+            className="flex items-center gap-3 rounded-xl px-4 py-3 mb-4"
+            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)' }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <MailX size={18} className="text-amber-400 flex-shrink-0" />
+            <p className="text-amber-300 text-sm font-medium">{gmailMessage}. Import manually instead:</p>
+          </motion.div>
+        )}
 
         {/* Card */}
         <motion.div

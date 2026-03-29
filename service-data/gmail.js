@@ -37,7 +37,7 @@ async function fetchRobinhoodEmails(accessToken) {
   do {
     const res = await gmail.users.messages.list({
       userId: "me",
-      q: "from:robinhood.com",
+      q: "from:robinhood.com (order OR trade OR executed OR confirmation)",
       maxResults: 500,
       pageToken,
     });
@@ -107,7 +107,9 @@ function extractBody(payload) {
 
 /**
  * Parse an array of email objects for Robinhood trade confirmations.
- * Matches three common Robinhood email formats.
+ * Matches real Robinhood email formats including:
+ *   - "Your order to buy $50.00 of TSLA ... You paid $50.00 for 0.129454 shares, at an average price of $386.24 per share"
+ *   - "You bought 10 shares of AAPL at $175.50"
  *
  * @param {Array<{subject: string, body: string}>} emails
  * @returns {Array<{action: "buy"|"sell", ticker: string, shares: number, price: number}>}
@@ -115,52 +117,49 @@ function extractBody(payload) {
 function parseTradeEmails(emails) {
   const trades = [];
 
-  // Pattern 1: "You bought 10 shares of AAPL at $175.50"
-  const pattern1 = /you\s+(bought|sold)\s+([\d,]+(?:\.\d+)?)\s+shares?\s+of\s+([A-Z]{1,5})\s+at\s+\$([0-9,]+(?:\.\d+)?)/gi;
+  // Pattern 1 (actual Robinhood 2024+ format):
+  // "Your order to buy/sell $X of TICKER ... You paid/received $X for Y shares, at an average price of $Z per share"
+  const pattern1 = /order\s+to\s+(buy|sell)\s+\$[\d,.]+\s+of\s+([A-Z]{1,5})[\s\S]*?(?:paid|received)\s+\$[\d,.]+\s+for\s+([\d,.]+)\s+shares?,\s+at\s+an\s+average\s+price\s+of\s+\$([\d,.]+)/gi;
 
-  // Pattern 2: "order to buy 3 shares of MSFT was executed at $415.20"
-  const pattern2 = /order\s+to\s+(buy|sell)\s+([\d,]+(?:\.\d+)?)\s+shares?\s+of\s+([A-Z]{1,5})\s+was\s+executed\s+at\s+\$([0-9,]+(?:\.\d+)?)/gi;
+  // Pattern 2 (older format): "You bought/sold X shares of TICKER at $PRICE"
+  const pattern2 = /you\s+(bought|sold)\s+([\d,]+(?:\.\d+)?)\s+shares?\s+of\s+([A-Z]{1,5})\s+at\s+\$([\d,]+(?:\.\d+)?)/gi;
 
-  // Pattern 3: "your 10 shares of AAPL were/was bought/sold at $175.50"
-  const pattern3 = /your\s+([\d,]+(?:\.\d+)?)\s+shares?\s+of\s+([A-Z]{1,5})\s+(?:were|was)\s+(bought|sold)\s+at\s+\$([0-9,]+(?:\.\d+)?)/gi;
+  // Pattern 3: "order to buy/sell X shares of TICKER was executed at $PRICE"
+  const pattern3 = /order\s+to\s+(buy|sell)\s+([\d,]+(?:\.\d+)?)\s+shares?\s+of\s+([A-Z]{1,5})\s+(?:was\s+)?executed\s+at\s+\$([\d,]+(?:\.\d+)?)/gi;
 
   for (const email of emails) {
     const text = `${email.subject}\n${email.body}`;
+    // Strip HTML tags to make regex matching easier
+    const cleaned = text.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/g, " ").replace(/\s+/g, " ");
 
-    // Reset lastIndex since patterns have /g flag
-    pattern1.lastIndex = 0;
-    pattern2.lastIndex = 0;
-    pattern3.lastIndex = 0;
+    const seen = new Set();
 
-    let match;
+    for (const pattern of [pattern1, pattern2, pattern3]) {
+      pattern.lastIndex = 0;
+      let match;
+      while ((match = pattern.exec(cleaned)) !== null) {
+        let action, ticker, shares, price;
 
-    while ((match = pattern1.exec(text)) !== null) {
-      const action = match[1].toLowerCase() === "bought" ? "buy" : "sell";
-      const shares = parseFloat(match[2].replace(/,/g, ""));
-      const ticker = match[3].toUpperCase();
-      const price = parseFloat(match[4].replace(/,/g, ""));
-      if (shares > 0 && price > 0 && ticker.length <= 5) {
-        trades.push({ action, ticker, shares, price });
-      }
-    }
+        if (pattern === pattern1) {
+          action = match[1].toLowerCase();
+          ticker = match[2].toUpperCase();
+          shares = parseFloat(match[3].replace(/,/g, ""));
+          price = parseFloat(match[4].replace(/,/g, ""));
+        } else {
+          action = match[1].toLowerCase() === "bought" ? "buy" : match[1].toLowerCase();
+          shares = parseFloat(match[2].replace(/,/g, ""));
+          ticker = match[3].toUpperCase();
+          price = parseFloat(match[4].replace(/,/g, ""));
+        }
 
-    while ((match = pattern2.exec(text)) !== null) {
-      const action = match[1].toLowerCase() === "buy" ? "buy" : "sell";
-      const shares = parseFloat(match[2].replace(/,/g, ""));
-      const ticker = match[3].toUpperCase();
-      const price = parseFloat(match[4].replace(/,/g, ""));
-      if (shares > 0 && price > 0 && ticker.length <= 5) {
-        trades.push({ action, ticker, shares, price });
-      }
-    }
-
-    while ((match = pattern3.exec(text)) !== null) {
-      const shares = parseFloat(match[1].replace(/,/g, ""));
-      const ticker = match[2].toUpperCase();
-      const action = match[3].toLowerCase() === "bought" ? "buy" : "sell";
-      const price = parseFloat(match[4].replace(/,/g, ""));
-      if (shares > 0 && price > 0 && ticker.length <= 5) {
-        trades.push({ action, ticker, shares, price });
+        if (shares > 0 && price > 0 && ticker.length <= 5) {
+          // Deduplicate within same email (Robinhood repeats the text)
+          const key = `${action}-${ticker}-${shares}-${price}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            trades.push({ action, ticker, shares, price });
+          }
+        }
       }
     }
   }
