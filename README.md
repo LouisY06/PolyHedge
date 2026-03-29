@@ -2,20 +2,9 @@
 
 Hedge your stock portfolio using Polymarket prediction markets. Upload your holdings, get AI-powered analysis of relevant markets, and build a diversified prediction market index tailored to your positions.
 
-## Screenshots
-
-### Portfolio Analysis & Trading
-AI identifies themes across your holdings and surfaces relevant prediction markets. Trade directly through a Polymarket-style interface.
-
 ![Dashboard](docs/screenshots/dashboard.png)
 
-### Import Portfolio
-Upload a CSV, enter positions manually, or connect Gmail to scan Robinhood confirmation emails.
-
 ![Import](docs/screenshots/import.png)
-
-### Index
-Auto-generated weighted portfolio of prediction markets with Kelly criterion sizing, showing current prices and AI-estimated targets.
 
 ![Index](docs/screenshots/index.png)
 
